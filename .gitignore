@@ -1,0 +1,16 @@
+# Entornos virtuales
+venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno / secretos
+.env
+*.key
+*.pem
+
+# Base de datos local
+*.db
+*.sqlite3
+
+# Archivos del sistema
+.DS_Store
