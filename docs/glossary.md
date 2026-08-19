@@ -46,5 +46,25 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 
 ---
 
-*Última actualización: sección 1 y 2 completadas durante la configuración inicial del entorno de desarrollo.*
+## 3. Conceptos de PMBOK / Gestión de Proyectos
 
+| Español | English | Definición |
+|---|---|---|
+| Acta de Constitución del Proyecto | Project Charter | Documento que autoriza formalmente el proyecto y define su propósito, alcance y objetivos de alto nivel |
+| Interesado | Stakeholder | Cualquier persona con interés o influencia en el proyecto |
+| Patrocinador | Sponsor | Quien autoriza y respalda el proyecto |
+| Alcance | Scope | Todo el trabajo necesario (y solo ese trabajo) para completar el proyecto exitosamente |
+| Enunciado del Alcance | Scope Statement | Documento que detalla el alcance incluido y excluido del proyecto |
+| Estructura de Desglose del Trabajo | Work Breakdown Structure (WBS) | Descomposición jerárquica del trabajo del proyecto en entregables más pequeños y manejables |
+| Hito | Milestone | Punto o evento significativo dentro del cronograma del proyecto |
+| Entregable | Deliverable | Cualquier producto, resultado o capacidad único y verificable que debe producirse |
+| Registro de Riesgos | Risk Register | Documento donde se registran los riesgos identificados, su análisis y planes de respuesta |
+| Supuesto | Assumption | Factor que se considera verdadero sin comprobación formal, para efectos de planeación |
+| Restricción | Constraint | Factor limitante que afecta la ejecución del proyecto (tiempo, presupuesto, recursos) |
+| Planeación gradual / en olas sucesivas | Rolling Wave Planning | Técnica de planeación progresiva: se detalla con precisión el trabajo cercano y de forma general el trabajo futuro |
+| Adaptación | Tailoring | Ajustar los procesos y artefactos de una metodología (como PMBOK) al tamaño y contexto real del proyecto |
+| Lecciones Aprendidas | Lessons Learned | Conocimiento adquirido durante el proyecto que puede mejorar el desempeño futuro |
+
+---
+
+*Última actualización: secciones 1, 2 y 3 completadas durante la configuración inicial y la redacción del Project Charter.*
