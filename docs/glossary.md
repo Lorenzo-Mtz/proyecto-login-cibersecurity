@@ -67,4 +67,31 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 
 ---
 
-*Última actualización: secciones 1, 2 y 3 completadas durante la configuración inicial y la redacción del Project Charter.*
+## 4. Conceptos de Ciberseguridad
+
+### 4.1 Criptografía y Hashing (Fase 0.2)
+
+| Español | English | Definición |
+|---|---|---|
+| Función hash | Hash function | Función que convierte una entrada de cualquier tamaño en una salida de tamaño fijo, de forma determinista y (idealmente) irreversible |
+| Cifrado | Encryption | Transformación de datos que SÍ es reversible mediante una clave — se usa cuando se necesita recuperar el valor original; por eso no es apropiado para contraseñas |
+| Sal | Salt | Valor aleatorio único agregado a cada contraseña antes de hashear, para que dos contraseñas iguales generen hashes distintos y así prevenir ataques de rainbow table |
+| Factor de trabajo | Work Factor (cost factor) | Parámetro de bcrypt que controla cuántas rondas de cómputo se requieren para generar un hash — entre más alto, más lento y más resistente a fuerza bruta |
+| bcrypt | bcrypt | Algoritmo de hashing diseñado específicamente para contraseñas: lento por diseño, con salt incorporado automáticamente en el propio hash resultante |
+| Tabla arcoíris | Rainbow Table | Tabla precalculada de hashes usada por atacantes para revertir hashes rápidamente — ineficaz contra hashes con salt |
+| Ataque de fuerza bruta | Brute-force attack | Intentar sistemáticamente muchas combinaciones de contraseñas hasta encontrar la correcta; su viabilidad depende de qué tan rápido se pueda calcular cada intento |
+
+### 4.2 Autenticación y Autorización (Fase 0.3)
+
+| Español | English | Definición |
+|---|---|---|
+| Autenticación | Authentication (AuthN) | Proceso de verificar que un usuario es quien dice ser |
+| Autorización | Authorization (AuthZ) | Proceso de determinar qué acciones o recursos puede acceder un usuario ya autenticado |
+| Control de acceso basado en roles | Role-Based Access Control (RBAC) | Modelo de autorización donde los permisos se asignan según el rol del usuario (ej. admin, usuario estándar) |
+| Referencia directa a objeto insegura | Insecure Direct Object Reference (IDOR) | Falla de AuthZ donde un usuario autenticado puede acceder a recursos de otro usuario manipulando identificadores (ej. cambiar un ID en la URL) |
+| Enumeración de usuarios | Username Enumeration | Falla donde el sistema revela, por mensajes de error distintos, si un username/email existe o no en la base de datos |
+| Principio de mínimo privilegio | Principle of Least Privilege | Un usuario o proceso debe tener solo los permisos mínimos necesarios para su función |
+
+---
+
+*Última actualización: sección 4 agregada (4.1 Criptografía y Hashing, 4.2 Autenticación y Autorización) durante Fase 0, temas 0.2 y 0.3. Secciones 1, 2 y 3 completadas durante la configuración inicial y la redacción del Project Charter.*
