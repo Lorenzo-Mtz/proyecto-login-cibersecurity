@@ -92,6 +92,50 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Enumeración de usuarios | Username Enumeration | Falla donde el sistema revela, por mensajes de error distintos, si un username/email existe o no en la base de datos |
 | Principio de mínimo privilegio | Principle of Least Privilege | Un usuario o proceso debe tener solo los permisos mínimos necesarios para su función |
 
+
+### 4.3 Gestión de Sesiones (Fase 0.4)
+
+| Español | English | Definición |
+|---|---|---|
+| Sesión | Session | Periodo de interacción continua entre un usuario autenticado y la aplicación, mantenido mediante un identificador que el servidor usa para "recordar" quién es en cada petición |
+| Cookie de sesión | Session cookie | Pequeño fragmento de datos que el navegador guarda y reenvía en cada petición, normalmente conteniendo el identificador de sesión |
+| Token de sesión | Session token | Identificador único (aleatorio e impredecible) que representa una sesión activa; debe generarse con suficiente entropía para no poder adivinarse |
+| Secuestro de sesión | Session hijacking | Ataque donde un tercero obtiene el identificador de sesión de un usuario legítimo (ej. robándolo en tránsito o vía XSS) y lo usa para hacerse pasar por él |
+| Fijación de sesión | Session fixation | Ataque donde el atacante fuerza a la víctima a usar un ID de sesión que el atacante ya conoce, para luego usarlo tras el login |
+| Bandera HttpOnly | HttpOnly flag | Atributo de cookie que impide que JavaScript del lado del cliente la lea, mitigando el robo de la cookie vía XSS |
+| Bandera Secure | Secure flag | Atributo de cookie que obliga al navegador a enviarla solo por conexiones HTTPS, evitando exponerla en texto plano |
+| Atributo SameSite | SameSite attribute | Atributo de cookie que restringe si se envía en peticiones que se originan desde otro sitio, mitigando ataques CSRF |
+| Expiración de sesión | Session expiration / timeout | Tiempo límite (absoluto o por inactividad) tras el cual una sesión deja de ser válida automáticamente |
+| Regeneración de ID de sesión | Session ID regeneration | Práctica de emitir un nuevo identificador de sesión justo después de un login exitoso (o cambio de privilegios), para invalidar cualquier ID previamente fijado por un atacante |
+| Invalidación de sesión / Cierre de sesión | Session invalidation / Logout | Acción de destruir la sesión en el servidor (no solo borrar la cookie del cliente) al cerrar sesión, para que el token ya no sirva |
+
+### 4.4 Protocolos de Verificación y Recuperación (Fase 0.5)
+
+| Español | English | Definición |
+|---|---|---|
+| Contraseña de un solo uso | One-Time Password (OTP) | Código válido para un único uso (o por un tiempo muy corto), usado como segundo factor de autenticación o para verificar identidad |
+| OTP basada en HMAC | HMAC-based One-Time Password (HOTP) | Variante de OTP donde el código se deriva de un secreto compartido y un contador que se incrementa en cada uso |
+| OTP basada en tiempo | Time-based One-Time Password (TOTP) | Variante de OTP (RFC 6238) donde el código se deriva de un secreto compartido y la marca de tiempo actual, cambiando cada cierto intervalo (normalmente 30 segundos) |
+| Autenticación multifactor | Multi-Factor Authentication (MFA) | Requerir dos o más factores independientes de autenticación (algo que sabes, algo que tienes, algo que eres) para confirmar identidad |
+| Secreto compartido / Semilla | Shared secret / Seed | Valor secreto conocido tanto por el servidor como por el dispositivo del usuario (ej. app autenticadora), usado como entrada para generar los códigos OTP |
+| Ventana de tiempo | Time step / Time window | Intervalo de tiempo (ej. 30 segundos) durante el cual un código TOTP específico es válido |
+| Código QR de aprovisionamiento | Provisioning QR code | Código QR que codifica la URL `otpauth://` con el secreto compartido, usado para configurar una app autenticadora sin transcribir el secreto a mano |
+| RFC 6238 | RFC 6238 | Estándar técnico (IETF) que define el algoritmo TOTP |
+
+### 4.5 Fundamentos de OWASP (Fase 0.6)
+
+| Español | English | Definición |
+|---|---|---|
+| OWASP | OWASP (Open Worldwide Application Security Project) | Fundación sin fines de lucro dedicada a mejorar la seguridad del software, conocida por publicar guías y estándares de referencia gratuitos |
+| OWASP Top 10 | OWASP Top 10 | Lista, actualizada periódicamente, de las 10 categorías de riesgo más críticas en aplicaciones web, usada como referencia mínima de seguridad |
+| OWASP ASVS | OWASP Application Security Verification Standard (ASVS) | Estándar de OWASP con una lista detallada de requisitos de seguridad verificables, organizados por nivel de rigor, usado para diseñar y auditar aplicaciones |
+| Niveles L1/L2/L3 de ASVS | ASVS Levels L1/L2/L3 | Niveles crecientes de rigor de ASVS: L1 (mínimo, aplicable a casi todo), L2 (aplicaciones con datos sensibles), L3 (alto valor/alto riesgo, requiere análisis profundo) |
+| Vulnerabilidad | Vulnerability | Debilidad en un sistema que puede ser explotada para comprometer su confidencialidad, integridad o disponibilidad |
+| Superficie de ataque | Attack surface | Conjunto de todos los puntos por donde un atacante podría intentar entrar o extraer datos de un sistema |
+| Inyección | Injection | Categoría de vulnerabilidad donde datos no confiables se envían a un intérprete (SQL, comandos, etc.) y se ejecutan como parte de un comando o consulta |
+| Control de acceso roto | Broken Access Control | Categoría del OWASP Top 10 donde fallas en las reglas de autorización permiten a un usuario acceder a datos o funciones que no le corresponden |
+| Fallas criptográficas | Cryptographic Failures | Categoría del OWASP Top 10 relacionada con datos sensibles expuestos por cifrado ausente, débil o mal implementado |
+
 ---
 
-*Última actualización: sección 4 agregada (4.1 Criptografía y Hashing, 4.2 Autenticación y Autorización) durante Fase 0, temas 0.2 y 0.3. Secciones 1, 2 y 3 completadas durante la configuración inicial y la redacción del Project Charter.*
+*Última actualización: sección 4 completada con 4.3 Gestión de Sesiones, 4.4 Protocolos de Verificación y Recuperación (OTP/TOTP) y 4.5 Fundamentos de OWASP, durante Fase 0, temas 0.4, 0.5 y 0.6.*
