@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Bienvenido</h1>
+  <p>Sesion activa. (TODO: proteger esta ruta y mostrar datos reales del usuario logeado -- ver src/routes/auth.py)</p>
+  <a href="{{ url_for('auth.logout') }}">Cerrar sesion</a>
+</div>
+{% endblock %}
