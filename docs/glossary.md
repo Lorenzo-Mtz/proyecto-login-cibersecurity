@@ -139,3 +139,6 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 ---
 
 *Última actualización: sección 4 completada con 4.3 Gestión de Sesiones, 4.4 Protocolos de Verificación y Recuperación (OTP/TOTP) y 4.5 Fundamentos de OWASP, durante Fase 0, temas 0.4, 0.5 y 0.6.*
+
+
+*Última actualización: sección 4 completada con 4.3 Gestión de Sesiones, 4.4 Protocolos de Verificación y Recuperación (OTP/TOTP) y 4.5 Fundamentos de OWASP, durante Fase 0, temas 0.4, 0.5 y 0.6.*
