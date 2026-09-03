@@ -106,7 +106,7 @@ def md5(msg: bytes) -> bytes:
 
 
 if __name__ == "__main__":
-    test_cases = [b"", b"abc", b"hola mundohola mundohola mundohola mundohola mundohola mundo"]
+    test_cases = [b"", b"abc", b"oablfdjsgdaldbqlwudbqd%$#_?**"]
     for case in test_cases:
         try:
             mine = md5(case).hex()
