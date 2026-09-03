@@ -9,10 +9,11 @@ y que estan en docs/glossary.md (secciones 4.1 a 4.5).
 No borres los comentarios TODO hasta que hayas resuelto ese punto; sirven
 como checklist de la Fase 1 del WBS.
 """
+from email_validator import validate_email, EmailNotValidError
 import bcrypt
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-
 from src.database import get_db
+import sqlite3
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -20,43 +21,55 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+
         username = request.form.get("username", "").strip()
+        if not username:
+            flash("El usuario esta vacio")
+            return redirect(url_for("auth.register"))
+        
         email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
-
-        # --- TODO (WBS 3.2.2 - Validacion de inputs, server-side) ---
-        # ¿Que pasa si username/email/password vienen vacios?
-        # ¿El email tiene un formato razonable?
-        # ¿password y confirm_password coinciden?
-        # Si algo falla: usa flash("mensaje") y haz `return redirect(url_for("auth.register"))`
-        # ANTES de seguir, para no continuar con datos invalidos.
-
-        # --- TODO (WBS 3.2.3 - Politica de contrasenas) ---
-        # Define una politica minima (ej. longitud minima) y aplicala aqui.
-        # Pista: glosario 4.1 (bcrypt, Factor de trabajo) -- bcrypt ya protege
-        # contra fuerza bruta en el hash, pero la politica de contrasenas es
-        # una capa adicional e independiente.
-
-        # --- TODO (WBS 3.2.4 - Hashing con bcrypt) ---
-        # NUNCA guardes `password` en texto plano en la base de datos.
-        # Genera el hash con bcrypt (bcrypt.hashpw + bcrypt.gensalt()) y
-        # guarda ese resultado (como string) en `password_hash`.
-        # Pista: glosario 4.1 -- "bcrypt", "Sal (Salt)".
-        password_hash = None  # <-- reemplaza esto por el hash real
-
-        if password_hash is None:
-            flash("Registro aun no implementado (ver TODOs de WBS 3.2 en src/routes/auth.py)")
+        
+        if not email:
+            flash("El correo esta vacio.")
+            return redirect(url_for("auth.register"))
+        try: 
+            validate_email(email,check_deliverability=False)
+        except EmailNotValidError:
+            flash("El formato del correo es erroneo.")
             return redirect(url_for("auth.register"))
 
-        db = get_db()
-        db.execute(
-            "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-            (username, email, password_hash),
-        )
-        db.commit()
+        
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        if not (12 <= len(password) <= 64):
+            flash("La contraseña no cumple con las condiciones: 1. Minimo 12 caracteres, 2. Máximo 64 caracteres")
+            return redirect(url_for("auth.register"))
+        if not confirm_password:
+            flash("La confirmación de contraseña esta vacia")
+            return redirect(url_for("auth.register"))
+        if password != confirm_password:
+            flash("La confirmación de contraseña no coincide")
+            return redirect(url_for("auth.register"))
 
-        flash("Cuenta creada. Ya puedes iniciar sesion.")
+        if len(password.encode("utf-8"))>72:
+            flash("La contraseña es demasiado larga, prueba incluir menos caracteres especiales.")
+            return redirect(url_for("auth.register"))
+        password_hash = (bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(12))).decode("utf-8")
+
+        db = get_db()
+        try:
+            db.execute(
+                "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+                (username, email, password_hash),
+            )
+            db.commit()
+        except sqlite3.IntegrityError:
+            db.rollback()
+            flash("No se pudo crear la cuenta. Verifica los datos e inténtalo de nuevo.")
+            return redirect(url_for("auth.register"))
+        
+
+        flash("Cuenta creada. Ya puedes iniciar sesión.")
         return redirect(url_for("auth.login"))
 
     return render_template("register.html")
