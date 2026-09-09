@@ -15,6 +15,9 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from src.database import get_db
 import sqlite3
 
+SALT = 12
+DUMMY_HASH = bcrypt.hashpw("dummypassword".encode('utf-8'),bcrypt.gensalt(SALT))
+
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -33,10 +36,12 @@ def register():
             flash("El correo esta vacio.")
             return redirect(url_for("auth.register"))
         try: 
-            validate_email(email,check_deliverability=False)
+            email_validado = validate_email(email, check_deliverability=False)
         except EmailNotValidError:
             flash("El formato del correo es erroneo.")
             return redirect(url_for("auth.register"))
+
+        email = email_validado.normalized.lower()
 
         
         password = request.form.get("password", "")
@@ -54,7 +59,7 @@ def register():
         if len(password.encode("utf-8"))>72:
             flash("La contraseña es demasiado larga, prueba incluir menos caracteres especiales.")
             return redirect(url_for("auth.register"))
-        password_hash = (bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(12))).decode("utf-8")
+        password_hash = (bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(SALT))).decode("utf-8")
 
         db = get_db()
         try:
@@ -81,49 +86,47 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
+        
+
+        if len(password.encode('utf-8'))>72:
+            flash("Usuario o contraseña incorrectos")
+            return redirect(url_for("auth.login"))
+        
+        
         db = get_db()
         user = db.execute(
             "SELECT * FROM users WHERE username = ?", (username,)
         ).fetchone()
 
-        # --- TODO (WBS 3.3.2 - Verificacion de credenciales) ---
-        # Si `user` existe, compara `password` contra `user["password_hash"]`
-        # usando bcrypt.checkpw(...). No uses `==` para comparar contrasenas.
-        credentials_valid = False  # <-- reemplaza con el resultado real
 
-        # --- TODO (WBS 3.3.3 - Mensajes de error genericos) ---
-        # IMPORTANTE: si el usuario no existe Y si la contrasena es
-        # incorrecta, el mensaje debe ser EXACTAMENTE el mismo texto y
-        # tomar (aprox.) el mismo tiempo en responder. Si el mensaje
-        # cambia segun el caso, estas filtrando informacion.
-        # Pista: glosario 4.2 -- "Enumeracion de usuarios" (Username Enumeration).
-        if not credentials_valid:
-            flash("Usuario o contrasena incorrectos")
+        if user is None:
+            bcrypt.checkpw(password.encode('utf-8'),DUMMY_HASH) #evitar fuga por tiempo de proceso
+            flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
 
-        # --- TODO (WBS 3.4.1 - Creacion de sesion) ---
-        # Si las credenciales son validas, marca al usuario como logeado.
-        # Pista: session["user_id"] = user["id"]
-        # No lo hagas todavia si `credentials_valid` es un valor fijo (arriba) --
-        # primero implementa la verificacion real.
+        credentials_valid = bcrypt.checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8')) 
 
-        flash("Login aun no implementado (ver TODOs de WBS 3.3/3.4 en src/routes/auth.py)")
-        return redirect(url_for("auth.login"))
+        if not credentials_valid:
+            flash("Usuario o contraseña incorrectos")
+            return redirect(url_for("auth.login"))
+
+        session.clear()
+        session["user_id"] = user["id"]
+        flash("Sesión iniciada")
+        return redirect(url_for("auth.dashboard"))
 
     return render_template("login.html")
 
 
 @auth_bp.route("/logout")
 def logout():
-    # --- TODO (WBS 3.5.1 - Invalidacion real de sesion) ---
-    # No basta con que el navegador "olvide" la sesion: hay que invalidarla
-    # tambien del lado del servidor. Pista: session.clear()
+    session.clear()
     return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/dashboard")
 def dashboard():
-    # --- TODO (proteccion de ruta) ---
-    # Esta ruta deberia requerir sesion activa. Si no hay session["user_id"],
-    # redirige a login en vez de mostrar el dashboard.
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+    
     return render_template("dashboard.html")
