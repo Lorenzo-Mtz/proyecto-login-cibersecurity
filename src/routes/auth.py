@@ -111,7 +111,9 @@ def login():
             return redirect(url_for("auth.login"))
 
         session.clear()
+        session.permanent = True
         session["user_id"] = user["id"]
+        session["session_version"] = user["session_version"]
         flash("Sesión iniciada")
         return redirect(url_for("auth.dashboard"))
 
@@ -120,13 +122,33 @@ def login():
 
 @auth_bp.route("/logout")
 def logout():
+    user_id = session.get("user_id")
+    if user_id:
+        # Invalida en el servidor todas las cookies emitidas para este usuario (R9)
+        db = get_db()
+        db.execute(
+            "UPDATE users SET session_version = session_version + 1 WHERE id = ?",
+            (user_id,),
+        )
+        db.commit()
     session.clear()
+
     return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/dashboard")
 def dashboard():
-    if not session.get("user_id"):
+    user_id = session.get("user_id")
+    if not user_id:
         return redirect(url_for("auth.login"))
-    
+
+    db = get_db()
+    user = db.execute(
+        "SELECT session_version FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+
+    if user is None or session.get("session_version") != user["session_version"]:
+        session.clear()
+        return redirect(url_for("auth.login"))
+
     return render_template("dashboard.html")

@@ -38,6 +38,7 @@ Es un documento **vivo**: se revisa al cierre de cada fase (ver WBS, tareas "Cie
 | R6 | Técnico / Cadena de suministro | Dependencias (librerías de Python) con vulnerabilidades conocidas | Baja | Media | Baja | Mitigar | Revisar dependencias con `pip list` / herramientas como `pip-audit` antes del cierre de cada fase |
 | R7 | Seguridad / Operacional | Exponer credenciales o secretos por accidente en el historial de Git | Baja | Alta | Media | Mitigar | `.gitignore` ya cubre `.env`, `*.key`, `*.pem`, `*.db` (ver guía de Git, Sección 6); revisar `git status` antes de cada `add` |
 | R8 | Gobernanza del proyecto | Los artefactos PMBOK (Charter, Scope, WBS) se desactualizan y dejan de reflejar el alcance real | Media | Baja | Baja | Mitigar | Usar el Registro de Cambios del Charter (Sección 10) cada vez que el alcance se ajuste, como ya se hizo al agregar la Fase 0 |
+| R9 | Seguridad | Flask guarda la sesión en una cookie firmada del lado del cliente: `logout()` no la invalida en el servidor, y una cookie robada sigue siendo válida hasta 14 días (`PERMANENT_SESSION_LIFETIME`) | Baja | Alta | Media | Mitigar | Columna `session_version` en `users`: se guarda en la sesión al hacer login, se valida en cada ruta protegida y se incrementa en logout (y en cambio de contraseña, Fase 2). **Estado: Mitigado (Septiembre 2026)** — implementado en `schema.sql` y `auth.py`; verificado que una cookie copiada antes del logout es rechazada. Riesgo residual: si el usuario nunca hace logout, una cookie robada sigue válida hasta 14 días |
 
 ---
 
