@@ -1,14 +1,3 @@
-"""
-Rutas de autenticacion: registro, login, logout, dashboard.
-
-Este archivo es el andamiaje de la Fase 1 (ver docs/wbs.md, seccion 3.0).
-Las partes marcadas con TODO son la logica de seguridad que te toca
-implementar a ti -- son justo los conceptos que ya estudiaste en la Fase 0
-y que estan en docs/glossary.md (secciones 4.1 a 4.5).
-
-No borres los comentarios TODO hasta que hayas resuelto ese punto; sirven
-como checklist de la Fase 1 del WBS.
-"""
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
@@ -144,11 +133,11 @@ def dashboard():
 
     db = get_db()
     user = db.execute(
-        "SELECT session_version FROM users WHERE id = ?", (user_id,)
+        "SELECT username, session_version FROM users WHERE id = ?", (user_id,)
     ).fetchone()
 
     if user is None or session.get("session_version") != user["session_version"]:
         session.clear()
         return redirect(url_for("auth.login"))
 
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", username=user["username"])
