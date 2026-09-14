@@ -69,3 +69,37 @@ Guía de preguntas por tema (repetir el formato en cada uno):
 - Temas cubiertos:
 - Principales aprendizajes:
 - Dudas pendientes o temas a revisar más adelante:
+
+---
+
+## Anexo — Resumen de lo realizado en Fase 0
+
+**Periodo:** 18 de agosto – 3 de septiembre de 2026
+
+### Gestión del proyecto (WBS 1.0)
+- Artefactos PMBOK *tailored*: Project Charter, Scope Statement, WBS (v1.1, con la Fase 0 agregada vía Registro de Cambios del Charter), Risk Register (R1–R8 y O1) y Lessons Learned Log (LL1–LL3).
+- Glosario bilingüe iniciado con conceptos de Git, Bash y PMBOK.
+
+### Estudio teórico (WBS 2.1 – 2.6)
+El aprendizaje se documentó directamente en `docs/glossary.md`, sección 4, en lugar de esta plantilla:
+
+| Tema | Resultado |
+|---|---|
+| 0.1 HTTP / HTTPS | ⚠️ Sin términos en el glosario ni notas en esta plantilla |
+| 0.2 Criptografía y Hashing | Glosario 4.1: hash vs cifrado, salt, work factor, bcrypt, rainbow tables, fuerza bruta |
+| 0.3 AuthN / AuthZ | Glosario 4.2: autenticación vs autorización, RBAC, IDOR, username enumeration, mínimo privilegio |
+| 0.4 Gestión de Sesiones | Glosario 4.3: cookies y tokens de sesión, hijacking, fixation, flags `HttpOnly`/`Secure`/`SameSite`, expiración, invalidación |
+| 0.5 OTP / TOTP | Glosario 4.4: OTP, HOTP, TOTP (RFC 6238), MFA, secreto compartido, QR de aprovisionamiento |
+| 0.6 OWASP | Glosario 4.5: Top 10, ASVS y sus niveles L1/L2/L3, inyección, broken access control, fallas criptográficas |
+
+### Laboratorios prácticos (`docs/fase0-lab-hashing/`)
+- **`md5_lab.py`** — MD5 implementado desde cero (padding little-endian, funciones F/G/H/I, tabla K derivada de `sin`), verificado contra `hashlib.md5`.
+- **`sha256_lab.py`** — SHA-256 desde cero (padding big-endian, tabla K generada a partir de raíces cúbicas de los primeros 64 primos, message schedule de 64 words, compresión de 64 rondas), verificado contra `hashlib.sha256`, incluyendo entradas de más de un bloque.
+- **`prueba.py`** — experimentos previos de conversión de texto a bits y codificación de la longitud.
+
+**Aprendizaje clave:** MD5 y SHA-256 son rápidos por diseño, y eso es justo lo que los hace inadecuados para contraseñas. Por eso el proyecto usa bcrypt, que es lento a propósito y trae el salt incorporado.
+
+### Pendientes de cierre de Fase 0 (WBS 2.7)
+- [ ] Tema 0.1 HTTP/HTTPS: notas y términos al glosario.
+- [ ] 2.7.3 Entrada de Lessons Learned de Fase 0.
+- [ ] Quitar la línea duplicada de "Última actualización" al final del glosario.
