@@ -1,8 +1,9 @@
 from email_validator import validate_email, EmailNotValidError
 import bcrypt
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 from src.database import get_db
 import sqlite3
+from src.routes.decorators import login_required
 
 SALT = 12
 DUMMY_HASH = bcrypt.hashpw("dummypassword".encode('utf-8'),bcrypt.gensalt(SALT))
@@ -113,11 +114,13 @@ def login():
 def logout():
     user_id = session.get("user_id")
     if user_id:
-        # Invalida en el servidor todas las cookies emitidas para este usuario (R9)
+        # Invalida en el servidor todas las cookies de este usuario (R9), solo si esta
+        # cookie trae la version vigente: una cookie vieja no puede cerrar sesiones nuevas.
         db = get_db()
         db.execute(
-            "UPDATE users SET session_version = session_version + 1 WHERE id = ?",
-            (user_id,),
+            "UPDATE users SET session_version = session_version + 1 "
+            "WHERE id = ? AND session_version = ?",
+            (user_id, session.get("session_version")),
         )
         db.commit()
     session.clear()
@@ -126,18 +129,6 @@ def logout():
 
 
 @auth_bp.route("/dashboard")
+@login_required
 def dashboard():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("auth.login"))
-
-    db = get_db()
-    user = db.execute(
-        "SELECT username, session_version FROM users WHERE id = ?", (user_id,)
-    ).fetchone()
-
-    if user is None or session.get("session_version") != user["session_version"]:
-        session.clear()
-        return redirect(url_for("auth.login"))
-
-    return render_template("dashboard.html", username=user["username"])
+    return render_template("dashboard.html", username=g.user["username"])
