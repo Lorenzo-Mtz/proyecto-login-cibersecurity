@@ -60,7 +60,7 @@ Flask 3.1 · SQLite · bcrypt 5.0 · email-validator 2.3 · python-dotenv · pla
 
 - [ ] Formularios sin token CSRF (mitigado parcialmente por `SameSite=Strict`).
 - [ ] `/logout` acepta GET: un enlace externo podría cerrar la sesión del usuario.
-- [ ] `SECRET_KEY` tiene un valor por defecto si falta `.env`; la app debería negarse a arrancar sin él.
+- [x] `SECRET_KEY` tiene un valor por defecto si falta `.env`; la app debería negarse a arrancar sin él. *(Resuelto en WBS 4.5.1; ver LL8.)*
 - [ ] La validación de sesión vive dentro de `dashboard()`; con más rutas protegidas conviene un decorador `@login_required`.
 - [ ] Riesgo residual de R9: una cookie robada sigue válida hasta 14 días si el usuario nunca hace logout.
 - [ ] Sin límite de intentos de login (WBS 4.1).
