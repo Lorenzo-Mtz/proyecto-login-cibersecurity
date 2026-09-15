@@ -92,6 +92,6 @@ El desarrollo se organiza en cuatro fases bajo un enfoque de planeación gradual
 
 ## 6. Enfoque de Planeación / Planning Approach
 
-Se usa **rolling wave planning**: la Fase 0 y la Fase 1 se desglosan a nivel de paquete de trabajo (*work package*) en el WBS, mientras que las Fases 2 y 3 permanecen a nivel de entregable general hasta que se cierre la fase anterior. El WBS se actualizará con más detalle conforme avance el proyecto.
+Se usa **rolling wave planning**: la Fase 0 y la Fase 1 se desglosan a nivel de paquete de trabajo (*work package*) en el WBS, mientras que las Fases 2 y 3 permanecen a nivel de entregable general hasta que se cierre la fase anterior. El WBS se actualizará con más detalle conforme avance el proyecto. *(Septiembre 2026: la Fase 2 ya está desglosada en el WBS v1.2; la Fase 3 sigue a nivel de entregable.)*
 
 > Nota: la incorporación de la Fase 0 (ver Charter, Sección 10 — Registro de Cambios) es un ejemplo práctico de cómo el rolling wave planning convive con el control de cambios: se ajusta el plan sin perder la trazabilidad de por qué cambió.

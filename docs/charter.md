@@ -103,6 +103,7 @@ Dado que es un proyecto de aprendizaje sin fecha límite fija, los hitos se orga
 - El proyecto se desarrolla en un entorno de aprendizaje individual, no organizacional
 - Se cuenta con acceso continuo a Git/GitHub y Python/Flask como stack
 
+**Restricciones (Constraints):**
 - Tiempo disponible: aproximadamente 4-8 horas por semana
 - Sin presupuesto asignado — todas las herramientas usadas son gratuitas/open source
 - Nivel de experiencia: principiante en desarrollo práctico, lo que puede afectar la velocidad de las fases iniciales
@@ -119,10 +120,10 @@ Al ser un proyecto individual de aprendizaje, este Charter se considera aprobado
 
 ## 10. Registro de Cambios / Change Log
 
+Los cambios al alcance base (Charter, Scope Statement, WBS) se registran aquí en vez de sobreescribirse sin dejar rastro, siguiendo el principio de **control de cambios (change control)** de PMBOK, adaptado a la escala de un proyecto individual.
 
 | # | Fecha | Descripción del cambio | Justificación |
 |---|---|---|---|
-| 1 | Agosto 2026 | Se añade **Fase 0 — Fundamentos Teóricos** antes de Fase 1: repaso de HTTP/HTTPS, criptografía y hashing, autenticación y autorización, gestión de sesiones, protocolos de verificación/recuperación (OTP/TOTP) y conceptos de OWASP. Se renumeran los hitos M1-M4 a M2-M5. | Antes de escribir código de seguridad conviene dominar los conceptos teóricos subyacentes; refuerza el propósito de aprendizaje del proyecto (Sección 1) |Los cambios al alcance base (Charter, Scope Statement, WBS) se registran aquí en vez de sobreescribirse sin dejar rastro, siguiendo el principio de **control de cambios (change control)** de PMBOK, adaptado a la escala de un proyecto individual.
-
-**Restricciones (Constraints):**
+| 1 | Agosto 2026 | Se añade **Fase 0 — Fundamentos Teóricos** antes de Fase 1: repaso de HTTP/HTTPS, criptografía y hashing, autenticación y autorización, gestión de sesiones, protocolos de verificación/recuperación (OTP/TOTP) y conceptos de OWASP. Se renumeran los hitos M1-M4 a M2-M5. | Antes de escribir código de seguridad conviene dominar los conceptos teóricos subyacentes; refuerza el propósito de aprendizaje del proyecto (Sección 1) |
+| 2 | Septiembre 2026 | **WBS v1.2:** la Fase 2 se desglosa a nivel de paquete de trabajo (4.1 – 4.5) y se agrega el paquete **4.6 Cierre de Fase 2**. La deuda técnica de Fase 1 (CSRF, `/logout` por GET, `SECRET_KEY` por defecto, `@login_required`, riesgo residual de R9) se incorpora como paquetes de 4.5. Risk Register: R2 y R4 actualizados, R10 – R14 agregados. | Rolling wave planning: la Fase 2 se detalla al cerrar la Fase 1 y antes de programarla (respuesta a R2). No cambia los criterios de éxito (Sección 3) ni las exclusiones (Sección 4) |
 
