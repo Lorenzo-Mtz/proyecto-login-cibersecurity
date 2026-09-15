@@ -136,9 +136,18 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Control de acceso roto | Broken Access Control | Categoría del OWASP Top 10 donde fallas en las reglas de autorización permiten a un usuario acceder a datos o funciones que no le corresponden |
 | Fallas criptográficas | Cryptographic Failures | Categoría del OWASP Top 10 relacionada con datos sensibles expuestos por cifrado ausente, débil o mal implementado |
 
+### 4.6 Endurecimiento OWASP (Fase 2)
+
+| Español | English | Definición |
+|---|---|---|
+| Falsificación de petición en sitios cruzados | Cross-Site Request Forgery (CSRF) | Ataque donde un sitio externo hace que el navegador de la víctima envíe una petición a otra aplicación; como el navegador adjunta las cookies automáticamente, la app la procesa como si la hubiera hecho el usuario |
+| Token CSRF / Token sincronizador | CSRF token / Synchronizer token | Valor secreto ligado a la sesión que el servidor inserta como campo oculto en cada formulario y verifica en cada POST; un sitio externo no puede leerlo (Same-Origin Policy), así que no puede falsificar la petición. En el proyecto lo implementa `CSRFProtect` de Flask-WTF (WBS 4.5.3) |
+| CSRF de inicio de sesión | Login CSRF | Variante de CSRF donde el atacante hace que la víctima inicie sesión en la cuenta *del atacante*, para capturar lo que la víctima escriba después; `SameSite` no lo evita porque la víctima aún no tiene cookie de sesión |
+| Política del mismo origen | Same-Origin Policy (SOP) | Regla del navegador que impide que una página lea respuestas de otro origen (esquema + dominio + puerto); es lo que hace que un token CSRF sea secreto para otros sitios |
+| Métodos seguros de HTTP | Safe HTTP methods | Métodos (GET, HEAD) que por especificación no deben cambiar estado en el servidor; por eso el logout se hace por POST y no con un enlace |
+| Post/Redirect/Get | Post/Redirect/Get (PRG) | Patrón donde, tras un POST que cambia estado, el servidor responde con una redirección (302) a una página que se carga por GET, para que recargar la página no reenvíe el formulario |
+| Redirección abierta | Open redirect | Vulnerabilidad donde la app redirige a una URL controlada por el usuario (ej. `?next=` o el encabezado `Referer`), lo que permite usar el dominio legítimo para enviar víctimas a un sitio malicioso |
+
 ---
 
-*Última actualización: sección 4 completada con 4.3 Gestión de Sesiones, 4.4 Protocolos de Verificación y Recuperación (OTP/TOTP) y 4.5 Fundamentos de OWASP, durante Fase 0, temas 0.4, 0.5 y 0.6.*
-
-
-*Última actualización: sección 4 completada con 4.3 Gestión de Sesiones, 4.4 Protocolos de Verificación y Recuperación (OTP/TOTP) y 4.5 Fundamentos de OWASP, durante Fase 0, temas 0.4, 0.5 y 0.6.*
+*Última actualización: Septiembre 2026 — se agrega 4.6 Endurecimiento OWASP (Fase 2, WBS 4.5.3). Las secciones 4.1 – 4.5 se completaron durante la Fase 0 (temas 0.2 a 0.6).*

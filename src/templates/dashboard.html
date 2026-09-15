@@ -4,6 +4,9 @@
 <div class="card">
   <h1>Hola, {{ username }}</h1>
   <p>Sesion activa.</p>
-  <a href="{{ url_for('auth.logout') }}">Cerrar sesion</a>
+  <form method="post" action="{{ url_for('auth.logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">Cerrar sesion</button>
+  </form>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
-from flask import Flask, redirect, url_for
+from flask import Flask, flash, redirect, url_for
+from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from src.config import Config
 from src.database import close_db
@@ -8,6 +9,8 @@ from src.routes.auth import auth_bp
 # clave es publica (esta en el repo).
 SECRET_KEY_PLACEHOLDER = "cambia-esto-por-un-valor-aleatorio-largo"
 SECRET_KEY_MIN_LENGTH = 32
+
+csrf = CSRFProtect()
 
 
 def validate_secret_key(secret_key):
@@ -30,9 +33,15 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     validate_secret_key(app.config["SECRET_KEY"])
+    csrf.init_app(app)
 
     app.teardown_appcontext(close_db)
     app.register_blueprint(auth_bp)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        flash("El formulario expiro o no es valido. Intentalo de nuevo.")
+        return redirect(url_for("auth.login"))
 
     @app.route("/")
     def index():

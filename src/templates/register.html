@@ -4,6 +4,8 @@
 <div class="card">
   <h1>Crear cuenta</h1>
   <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
     <label for="username">Usuario</label>
     <input type="text" id="username" name="username" required autofocus>
 

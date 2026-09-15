@@ -110,7 +110,7 @@ def login():
     return render_template("login.html")
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 def logout():
     user_id = session.get("user_id")
     if user_id:

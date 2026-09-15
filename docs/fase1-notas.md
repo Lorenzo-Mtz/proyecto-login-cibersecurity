@@ -58,8 +58,8 @@ Flask 3.1 · SQLite · bcrypt 5.0 · email-validator 2.3 · python-dotenv · pla
 
 ## Deuda técnica para Fase 2 (revisión OWASP, WBS 4.5)
 
-- [ ] Formularios sin token CSRF (mitigado parcialmente por `SameSite=Strict`).
-- [ ] `/logout` acepta GET: un enlace externo podría cerrar la sesión del usuario.
+- [x] Formularios sin token CSRF (mitigado parcialmente por `SameSite=Strict`). *(Resuelto en WBS 4.5.3 con `CSRFProtect` de Flask-WTF.)*
+- [x] `/logout` acepta GET: un enlace externo podría cerrar la sesión del usuario. *(Resuelto en WBS 4.5.3: solo POST con token CSRF.)*
 - [x] `SECRET_KEY` tiene un valor por defecto si falta `.env`; la app debería negarse a arrancar sin él. *(Resuelto en WBS 4.5.1; ver LL8.)*
 - [x] La validación de sesión vive dentro de `dashboard()`; con más rutas protegidas conviene un decorador `@login_required`. *(Resuelto en WBS 4.5.2; además, el logout ya no permite que una cookie invalidada cierre las sesiones vigentes.)*
 - [ ] Riesgo residual de R9: una cookie robada sigue válida hasta 14 días si el usuario nunca hace logout.
