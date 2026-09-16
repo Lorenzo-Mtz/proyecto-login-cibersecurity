@@ -3,6 +3,7 @@ from functools import wraps
 from flask import g, redirect, session, url_for
 
 from src.database import get_db
+from src.audit import audit
 
 
 def login_required(view):
@@ -27,6 +28,7 @@ def login_required(view):
         # Invalidacion server-side (R9): una cookie emitida antes del ultimo
         # logout trae una session_version vieja y se rechaza.
         if user is None or session.get("session_version") != user["session_version"]:
+            audit("session_rejected", user_id=user_id)
             session.clear()
             return redirect(url_for("auth.login"))
 

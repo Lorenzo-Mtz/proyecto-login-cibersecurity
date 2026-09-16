@@ -4,6 +4,7 @@ from flask import Blueprint, flash, g, redirect, render_template, request, sessi
 from src.database import get_db
 import sqlite3
 from src.routes.decorators import login_required
+from src.audit import audit
 
 SALT = 12
 DUMMY_HASH = bcrypt.hashpw("dummypassword".encode('utf-8'),bcrypt.gensalt(SALT))
@@ -53,12 +54,14 @@ def register():
 
         db = get_db()
         try:
-            db.execute(
+            cur = db.execute(
                 "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
                 (username, email, password_hash),
             )
             db.commit()
+            audit("register_success", user_id=cur.lastrowid, username=username)
         except sqlite3.IntegrityError:
+            audit("register_failure", username=username)
             db.rollback()
             flash("No se pudo crear la cuenta. Verifica los datos e inténtalo de nuevo.")
             return redirect(url_for("auth.register"))
@@ -79,6 +82,7 @@ def login():
         
 
         if len(password.encode('utf-8'))>72:
+            audit("login_failure", username=username)
             flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
         
@@ -91,12 +95,14 @@ def login():
 
         if user is None:
             bcrypt.checkpw(password.encode('utf-8'),DUMMY_HASH) #evitar fuga por tiempo de proceso
+            audit("login_failure", username=username)
             flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
 
         credentials_valid = bcrypt.checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8')) 
 
         if not credentials_valid:
+            audit("login_failure", username=username)
             flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
 
@@ -104,6 +110,7 @@ def login():
         session.permanent = True
         session["user_id"] = user["id"]
         session["session_version"] = user["session_version"]
+        audit("login_success", user_id=user["id"], username=user["username"])
         flash("Sesión iniciada")
         return redirect(url_for("auth.dashboard"))
 
@@ -117,12 +124,16 @@ def logout():
         # Invalida en el servidor todas las cookies de este usuario (R9), solo si esta
         # cookie trae la version vigente: una cookie vieja no puede cerrar sesiones nuevas.
         db = get_db()
-        db.execute(
+        cur = db.execute(
             "UPDATE users SET session_version = session_version + 1 "
             "WHERE id = ? AND session_version = ?",
             (user_id, session.get("session_version")),
         )
         db.commit()
+        if cur.rowcount == 1:
+            audit("logout", user_id=user_id)
+        else:
+            audit("session_rejected", user_id=user_id)
     session.clear()
 
     return redirect(url_for("auth.login"))

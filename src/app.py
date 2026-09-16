@@ -4,6 +4,7 @@ from flask_wtf.csrf import CSRFError, CSRFProtect
 from src.config import Config
 from src.database import close_db
 from src.routes.auth import auth_bp
+from src.audit import audit, init_audit_log
 
 # Valor de ejemplo de .env.example: si alguien lo copia sin cambiarlo, la
 # clave es publica (esta en el repo).
@@ -34,12 +35,14 @@ def create_app():
     app.config.from_object(Config)
     validate_secret_key(app.config["SECRET_KEY"])
     csrf.init_app(app)
+    init_audit_log(app)
 
     app.teardown_appcontext(close_db)
     app.register_blueprint(auth_bp)
 
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
+        audit("csrf_failure")
         flash("El formulario expiro o no es valido. Intentalo de nuevo.")
         return redirect(url_for("auth.login"))
 
