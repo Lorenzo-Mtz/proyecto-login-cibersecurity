@@ -11,3 +11,19 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     session_version INTEGER NOT NULL DEFAULT 0
 );
+
+
+-- WBS 4.1.2 - Intentos de login fallidos (ventana deslizante)
+--
+-- Tabla propia y no columnas en users: se cuentan tambien los intentos
+-- contra cuentas que no existen. Si solo contaramos usuarios reales, el
+-- bloqueo revelaria cuales existen (R10).
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    attempted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup
+    ON login_attempts (username, attempted_at);

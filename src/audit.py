@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from flask import request
 
-# Catalogo cerrado de eventos (WBS 4.4.1, R14). Los de 4.1-4.3 se agregan
+# Catalogo cerrado de eventos (WBS 4.4.1, R14). Los de 4.2-4.3 se agregan
 # cuando se implementen esos paquetes.
 EVENTS = {
     "register_success": "Cuenta creada",
@@ -15,6 +15,7 @@ EVENTS = {
     "logout": "Cierre de sesion con cookie vigente",
     "session_rejected": "Cookie con session_version vieja o de usuario inexistente",
     "csrf_failure": "POST con token CSRF ausente o invalido",
+    "login_blocked": "Login rechazado por limite de intentos",
 }
 
 MAX_FIELD_LENGTH = 64

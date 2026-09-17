@@ -10,6 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 
+
 class Config:
     # --- WBS 4.5.1 - SECRET_KEY obligatoria ---
     # Firma la cookie de sesion y los mensajes flash. Quien la conozca puede
@@ -34,3 +35,10 @@ class Config:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Strict"
     PERMANENT_SESSION_LIFETIME = timedelta(days=14)
+
+    # --- WBS 4.1.1 - Politica anti fuerza bruta ---
+    # En config y no en auth.py para que la prueba de 4.1.5 pueda bajar la
+    # ventana a segundos y verificar que el bloqueo expira.
+    LOGIN_MAX_ATTEMPTS = 5
+    LOGIN_WINDOW_SECONDS = 15*60
+

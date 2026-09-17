@@ -5,6 +5,7 @@ from src.database import get_db
 import sqlite3
 from src.routes.decorators import login_required
 from src.audit import audit
+from src.throttle import is_blocked, record_failed_attempt, reset_attempts
 
 SALT = 12
 DUMMY_HASH = bcrypt.hashpw("dummypassword".encode('utf-8'),bcrypt.gensalt(SALT))
@@ -78,34 +79,49 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+        db = get_db()
 
-        
-
-        if len(password.encode('utf-8'))>72:
-            audit("login_failure", username=username)
+        # WBS 4.1.3 - Antes de mirar si la cuenta existe: la decision ya esta
+        # tomada y consultar users seria trabajo tirado. El checkpw contra
+        # DUMMY_HASH se ejecuta aunque su resultado se ignore, para que la
+        # respuesta bloqueada tarde lo mismo que un fallo normal (R10: sin el,
+        # la latencia delata que la cuenta existe y esta bajo ataque).
+        # No se registra el intento: retornar sin contarlo impide que un
+        # atacante renueve el bloqueo de una victima indefinidamente.
+        if is_blocked(db, username):
+            bcrypt.checkpw(password.encode('utf-8'), DUMMY_HASH)
+            audit("login_blocked", username=username)
             flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
-        
-        
-        db = get_db()
+
         user = db.execute(
             "SELECT * FROM users WHERE username = ?", (username,)
         ).fetchone()
 
-
-        if user is None:
-            bcrypt.checkpw(password.encode('utf-8'),DUMMY_HASH) #evitar fuga por tiempo de proceso
+        if len(password.encode('utf-8')) > 72:
             audit("login_failure", username=username)
+            record_failed_attempt(db, username)
             flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
 
-        credentials_valid = bcrypt.checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8')) 
+        if user is None:
+            bcrypt.checkpw(password.encode('utf-8'), DUMMY_HASH)  # evitar fuga por tiempo de proceso
+            audit("login_failure", username=username)
+            record_failed_attempt(db, username)
+            flash("Usuario o contraseña incorrectos")
+            return redirect(url_for("auth.login"))
+
+        credentials_valid = bcrypt.checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8'))
 
         if not credentials_valid:
             audit("login_failure", username=username)
+            record_failed_attempt(db, username)
             flash("Usuario o contraseña incorrectos")
             return redirect(url_for("auth.login"))
 
+        # WBS 4.1.4 - Un login correcto borra el historial: el usuario que fallo
+        # cuatro veces y acerto no arrastra esos fallos al proximo intento.
+        reset_attempts(db, username)
         session.clear()
         session.permanent = True
         session["user_id"] = user["id"]

@@ -147,7 +147,14 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Métodos seguros de HTTP | Safe HTTP methods | Métodos (GET, HEAD) que por especificación no deben cambiar estado en el servidor; por eso el logout se hace por POST y no con un enlace |
 | Post/Redirect/Get | Post/Redirect/Get (PRG) | Patrón donde, tras un POST que cambia estado, el servidor responde con una redirección (302) a una página que se carga por GET, para que recargar la página no reenvíe el formulario |
 | Redirección abierta | Open redirect | Vulnerabilidad donde la app redirige a una URL controlada por el usuario (ej. `?next=` o el encabezado `Referer`), lo que permite usar el dominio legítimo para enviar víctimas a un sitio malicioso |
+| Fuerza bruta | Brute force | Ataque que prueba contraseñas una tras otra contra una misma cuenta hasta acertar; no rompe el hash, le pide al servidor que lo verifique por él. El costo de bcrypt lo frena pero no lo detiene: hace falta un límite de intentos (WBS 4.1) |
+| Relleno de credenciales | Credential stuffing | Ataque que reutiliza pares usuario/contraseña filtrados de otro sitio; a diferencia de la fuerza bruta no necesita miles de intentos, con frecuencia basta uno |
+| Rociado de contraseñas | Password spraying | Ataque que prueba una sola contraseña común contra muchas cuentas distintas; un contador por nombre de usuario **no lo detecta**, porque ninguna cuenta acumula fallos. Mitigarlo requiere un límite por IP (fuera del alcance de 4.1) |
+| Ventana deslizante | Sliding window | Técnica de conteo que sólo considera los eventos ocurridos en los últimos N segundos respecto de *ahora*, en lugar de reiniciar un contador en instantes fijos; el bloqueo se libera solo, conforme los intentos viejos salen de la ventana |
+| Anti-automatización | Anti-automation | Controles que impiden probar credenciales a volumen (límite de intentos, bloqueo temporal, CAPTCHA); exigidos por ASVS V2.2.1. Son independientes de la fuerza del hash |
+| Bloqueo de cuenta / DoS de cuenta | Account lockout / Account DoS | Efecto secundario de bloquear por intentos fallidos: un tercero puede bloquear a propósito a un usuario legítimo escribiendo contraseñas incorrectas. Se mitiga con bloqueos cortos, nunca permanentes, y no registrando intentos mientras el bloqueo está vigente |
+| Oráculo | Oracle | Cualquier diferencia observable en la respuesta —mensaje, código de estado o **tiempo de respuesta**— que le revela al atacante información que no debería tener, como si una cuenta existe o si está bloqueada |
 
 ---
 
-*Última actualización: Septiembre 2026 — se agrega 4.6 Endurecimiento OWASP (Fase 2, WBS 4.5.3). Las secciones 4.1 – 4.5 se completaron durante la Fase 0 (temas 0.2 a 0.6).*
+*Última actualización: Septiembre 2026 — se amplía 4.6 Endurecimiento OWASP con los términos de fuerza bruta (Fase 2, WBS 4.1). Las secciones 4.1 – 4.5 se completaron durante la Fase 0 (temas 0.2 a 0.6).*
