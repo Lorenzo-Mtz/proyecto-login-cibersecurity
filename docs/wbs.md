@@ -2,6 +2,7 @@
 
 **Proyecto:** Sistema de Login Seguro — Proyecto de Aprendizaje en Ciberseguridad
 **Enfoque:** Rolling Wave Planning — Fases 0, 1 y 2 desglosadas a nivel de paquete de trabajo (*work package*); Fase 3 a nivel de entregable, pendiente de desglose detallado.
+**v1.3** — se agrega la tarea 4.6.4, suite de pruebas automatizadas (ver Charter, Sección 10 — Registro de Cambios, cambio #3)
 **v1.2** — desglose de la Fase 2 (ver Charter, Sección 10 — Registro de Cambios, cambio #2)
 **v1.1** — actualizado para incorporar la Fase 0 (ver Charter, Sección 10 — Registro de Cambios, cambio #1)
 
@@ -130,6 +131,7 @@
 - 4.6.1 Pruebas manuales end-to-end contra los criterios de aceptación de Fase 2 (Scope Statement, Sección 3)
 - 4.6.2 Commit final de Fase 2
 - 4.6.3 Entrada en Lessons Learned Log (parcial) y revisión del Risk Register
+- 4.6.4 Suite de pruebas automatizadas (`pytest`) en `tests/`, una por paquete de trabajo *(adelantado a 4.1 — ver Registro de Cambios del Charter, cambio #3)*
 
 *Orden de ejecución sugerido:* el WBS agrupa el trabajo por entregable, no fija el orden. Por dependencias conviene: **4.5.1 – 4.5.3** (base: los formularios y rutas nuevas nacen con CSRF y `@login_required`) → **4.4** (los paquetes siguientes ya emiten eventos) → **4.1** → **4.2** → **4.3** (la más compleja; reutiliza el contador de 4.1) → **4.5.4 – 4.5.6** → **4.6**. Un commit por paquete de trabajo.
 

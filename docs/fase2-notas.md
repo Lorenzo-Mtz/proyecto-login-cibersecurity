@@ -91,6 +91,7 @@ El tiempo lo pone **siempre SQLite** (`DEFAULT CURRENT_TIMESTAMP` al insertar, `
 - [ ] 4.5.4: riesgo residual de R9 (sesión de 14 días sin expiración por inactividad).
 - [ ] 4.5.5: `pip-audit` sobre las dependencias (R6).
 - [ ] 4.5.6: recorrido documentado del OWASP Top 10.
-- [ ] Sin pruebas automatizadas en el repo: la verificación de cada paquete se hizo con scripts temporales fuera del proyecto. Decidir en el cierre de fase si se incorpora `pytest`.
+- [x] ~~Sin pruebas automatizadas en el repo~~: resuelto durante 4.1. Se incorporó `pytest` y la carpeta `tests/` (42 pruebas sobre los paquetes 4.1, 4.4, 4.5.2 y 4.5.3). Ver `tests/README.md`. **Pendiente formal:** registrar el cambio de alcance en el Charter y agregar el paquete al WBS.
+- [ ] `tests/`: falta cubrir 4.5.1 (`validate_secret_key`) y las validaciones propias de `/register`.
 - [ ] Riesgo residual de R14: una contraseña escrita por error en el campo "Usuario" queda en el log.
 - [ ] Riesgo residual de R10: no hay límite por IP, así que el *password spraying* pasa sin tocar ningún contador.
