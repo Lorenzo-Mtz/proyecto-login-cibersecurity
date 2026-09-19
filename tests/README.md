@@ -20,9 +20,10 @@ pytest tests/test_bruteforce.py
 pytest tests/test_bruteforce.py::test_sin_oraculo_por_latencia
 ```
 
-La suite tarda ~100 s. Casi todo es bcrypt con cost 12: cada login cuesta
-~330 ms **a propósito**, y `test_el_bloqueo_expira_solo` espera 11 s reales a
-que venza una ventana. No es lentitud accidental.
+La suite son 56 pruebas y tarda ~45 s. Casi todo es bcrypt con cost 12: cada
+login cuesta ~330 ms **a propósito**, y dos pruebas esperan tiempo real a que
+venza algo (`test_el_bloqueo_expira_solo`, 11 s; `test_un_token_expirado_es_rechazado`,
+3 s). No es lentitud accidental.
 
 Nada toca `instance/`: cada prueba recibe una base de datos y un log de
 auditoría nuevos en un directorio temporal.
@@ -36,6 +37,7 @@ auditoría nuevos en un directorio temporal.
 | `test_audit.py` | 4.4 | Registro de auditoría: formato, catálogo cerrado y *log injection* (R14) |
 | `test_session.py` | 4.5.2 | `@login_required` e invalidación real de sesión con `session_version` (R9) |
 | `test_csrf.py` | 4.5.3 | Tokens CSRF, logout solo por POST y *open redirect* |
+| `test_password_reset.py` | 4.2 | Recuperación de contraseña: un solo uso, expiración, sin enumeración de cuentas y sin fuga del token (R11) |
 
 Cada archivo abre con un docstring que explica **qué propiedad prueba y qué
 pasaría si esa propiedad se rompiera**. Esa es la parte que hay que leer antes
@@ -75,6 +77,14 @@ igual porque dos errores se cancelaron: en `test_intento_bloqueado_no_prolonga_e
 se compara `MAX(id)`, que distingue "no se insertó nada" de "se insertó una fila
 y se borró otra".
 
+**Ver fallar la prueba antes de creerle** (LL14). Al cerrar un paquete se rompe
+cada control a propósito —una mutación a la vez, revirtiendo después— y se
+confirma que la prueba correspondiente se pone en rojo. Así se descubrió que
+`test_se_marca_la_fila_del_token_usado_y_no_otra` pasaba con el bug puesto: en
+datos de prueba pequeños los ids coinciden por accidente y tapan justo los
+errores de "columna equivocada". Por eso ahora esa prueba emite los tokens en
+un orden que desalinea los ids, con un `assert` que lo verifica.
+
 **Cuidar los márgenes de tiempo** (LL10). Una ventana más corta que el costo de
 la operación que se mide hace que la prueba mida otra cosa. `VENTANA = 10` en
 `test_bruteforce.py` es holgada frente a los ~330 ms de cada request; bajarla
@@ -85,6 +95,8 @@ rompe las pruebas por una razón que no tiene nada que ver con el código.
 - **WBS 4.5.1** (`SECRET_KEY` obligatoria) no tiene pruebas. `validate_secret_key`
   es una función pura y son cuatro asserts: clave ausente, el valor de ejemplo
   de `.env.example`, una de menos de 32 caracteres y una válida.
-- El registro (`/register`) solo se ejercita de paso. Sus validaciones propias
-  —email, longitud de contraseña, límite de 72 bytes, confirmación— no tienen
-  pruebas dedicadas.
+- El registro (`/register`) se ejercita solo en parte. La política de longitud
+  quedó cubierta en `test_password_reset.py` (es la misma función compartida),
+  pero el formato del email y el límite de 72 bytes siguen sin prueba propia.
+- **WBS 4.2**: falta cubrir el riesgo residual, cuando se atienda — que pedir
+  enlaces en serie no deba poder mantener invalidado el de la víctima.
