@@ -27,3 +27,23 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 
 CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup
     ON login_attempts (username, attempted_at);
+
+-- WBS 4.2.1 - Tokens de recuperacion de contrasena emitidos
+--
+-- Al reves que login_attempts, esta tabla si lleva FOREIGN KEY a users:
+-- alla se cuentan intentos contra cuentas que no existen (si no, el bloqueo
+-- revelaria cuales existen); aqui un token solo tiene sentido para un usuario
+-- real. La verificacion se enciende por conexion en database.py: SQLite la
+-- trae apagada por default y sin ella la restriccion no se aplica.
+--
+-- token_hash guarda el SHA-256 del token, nunca el token (R11).
+-- used_at es NULL mientras no se use: guarda cuando se consumio, que un
+-- booleano perderia.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users (id),
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP
+);

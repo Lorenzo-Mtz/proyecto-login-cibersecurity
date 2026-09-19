@@ -6,11 +6,30 @@ import sqlite3
 from src.routes.decorators import login_required
 from src.audit import audit
 from src.throttle import is_blocked, record_failed_attempt, reset_attempts
+from src.reset_tokens import issue_token, find_valid_token
+from src.mailer import send_password_reset
+
 
 SALT = 12
 DUMMY_HASH = bcrypt.hashpw("dummypassword".encode('utf-8'),bcrypt.gensalt(SALT))
 
 auth_bp = Blueprint("auth", __name__)
+
+def validar_password(password, confirm_password):
+    if not (12 <= len(password) <= 64):
+        flash("La contraseña no cumple con las condiciones: 1. Minimo 12 caracteres, 2. Máximo 64 caracteres")
+        return False
+    if not confirm_password:
+        flash("La confirmación de contraseña esta vacia")
+        return False
+    if password != confirm_password:
+        flash("La confirmación de contraseña no coincide")
+        return False
+
+    if len(password.encode("utf-8"))>72:
+        flash("La contraseña es demasiado larga, prueba incluir menos caracteres especiales.")
+        return False
+    return True
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -27,7 +46,7 @@ def register():
         if not email:
             flash("El correo esta vacio.")
             return redirect(url_for("auth.register"))
-        try: 
+        try:
             email_validado = validate_email(email, check_deliverability=False)
         except EmailNotValidError:
             flash("El formato del correo es erroneo.")
@@ -38,19 +57,10 @@ def register():
         
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
-        if not (12 <= len(password) <= 64):
-            flash("La contraseña no cumple con las condiciones: 1. Minimo 12 caracteres, 2. Máximo 64 caracteres")
-            return redirect(url_for("auth.register"))
-        if not confirm_password:
-            flash("La confirmación de contraseña esta vacia")
-            return redirect(url_for("auth.register"))
-        if password != confirm_password:
-            flash("La confirmación de contraseña no coincide")
-            return redirect(url_for("auth.register"))
 
-        if len(password.encode("utf-8"))>72:
-            flash("La contraseña es demasiado larga, prueba incluir menos caracteres especiales.")
+        if not validar_password(password,confirm_password):
             return redirect(url_for("auth.register"))
+        
         password_hash = (bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(SALT))).decode("utf-8")
 
         db = get_db()
@@ -159,3 +169,94 @@ def logout():
 @login_required
 def dashboard():
     return render_template("dashboard.html", username=g.user["username"])
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        db = get_db()
+
+        email = request.form.get("email", "").strip()
+        if not email:
+            flash("El correo esta vacio.")
+            return redirect(url_for("auth.forgot_password"))
+        try:
+            email_validado = validate_email(email, check_deliverability=False)
+        except EmailNotValidError:
+            flash("El formato del correo es erroneo.")
+            return redirect(url_for("auth.forgot_password"))
+
+        email = email_validado.normalized.lower()
+
+        user = db.execute(
+            "SELECT id, username FROM users WHERE email = ?", (email,)
+        ).fetchone()
+
+        if user is not None:
+            token = issue_token(db, user["id"])
+            enlace = url_for("auth.reset_password", token=token, _external=True)
+            send_password_reset(email, enlace)
+            audit("password_reset_requested", user_id=user["id"], username=user["username"])
+        else:
+            audit("password_reset_requested")
+
+        flash("Si el correo está registrado, enviamos un enlace para restablecer tu contraseña.")
+        return redirect(url_for("auth.login"))
+
+    return render_template("forgot_password.html")
+
+
+@auth_bp.route("/reset-password/<token>")
+def reset_password(token):
+    return render_template("reset_password.html", token=token)
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password_submit():
+    db = get_db()
+    read_token = request.form.get("token", "")
+
+    reset = find_valid_token(db, read_token)
+
+    # Inexistente, expirado y ya usado caen los tres aqui, a proposito: el
+    # mensaje no distingue cual fue (R11).
+    if reset is None:
+        audit("password_reset_failure")
+        flash("El enlace no es valido o expiro. Solicita uno nuevo.")
+        return redirect(url_for("auth.forgot_password"))
+
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+    if not validar_password(password, confirm_password):
+        return redirect(url_for("auth.reset_password", token=read_token))
+
+    password_hash = (bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(SALT))).decode("utf-8")
+
+    # Cuatro cambios y un solo commit: contrasena + session_version, token usado
+    # y contador de intentos. Si la contrasena cambiara y el token quedara sin
+    # marcar, el enlace del correo seguiria abriendo la cuenta.
+    #
+    # La contrasena y session_version van en la MISMA sentencia (WBS 4.2.6, R9):
+    # cambiar la credencial e invalidar las sesiones abiertas son una sola
+    # decision, y juntas no puede ocurrir una sin la otra. A diferencia de
+    # logout(), aqui no se exige "AND session_version = ?": quien probo control
+    # del correo puede invalidar todo sin presentar ninguna cookie.
+    db.execute(
+        "UPDATE users SET password_hash = ?, session_version = session_version + 1 "
+        "WHERE id = ?",
+        (password_hash, reset["user_id"]),
+    )
+
+    db.execute(
+        "UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (reset["token_id"],),
+    )
+
+    # reset_attempts hace su propio commit: va al final, cuando los UPDATE de
+    # arriba ya estan en la transaccion, para que los cuatro cambios entren juntos.
+    reset_attempts(db, reset["username"])
+
+    db.commit()
+    audit("password_reset_success", user_id=reset["user_id"], username=reset["username"])
+    flash("Tu contrasena fue actualizada. Ya puedes iniciar sesion.")
+    return redirect(url_for("auth.login"))

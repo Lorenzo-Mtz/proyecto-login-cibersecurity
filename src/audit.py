@@ -16,6 +16,9 @@ EVENTS = {
     "session_rejected": "Cookie con session_version vieja o de usuario inexistente",
     "csrf_failure": "POST con token CSRF ausente o invalido",
     "login_blocked": "Login rechazado por limite de intentos",
+    "password_reset_requested": "Solicitud de recuperacion de contrasena",
+    "password_reset_failure": "Token de recuperacion invalido, expirado o ya usado",
+    "password_reset_success": "Contrasena cambiada por recuperacion",
 }
 
 MAX_FIELD_LENGTH = 64

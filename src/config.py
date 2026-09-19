@@ -42,3 +42,8 @@ class Config:
     LOGIN_MAX_ATTEMPTS = 5
     LOGIN_WINDOW_SECONDS = 15*60
 
+    # --- WBS 4.2.1 - Vida del token de recuperacion ---
+    # Corta porque el token vive en una bandeja de entrada, que es justo el
+    # lugar que se compromete. Aqui y no en el codigo para que la prueba de
+    # 4.2.7 pueda bajarla a segundos y verificar que el token expira.
+    RESET_TOKEN_LIFETIME_SECONDS = 30*60
