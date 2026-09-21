@@ -21,8 +21,14 @@ def login_required(view):
             return redirect(url_for("auth.login"))
 
         db = get_db()
+        # Columnas explicitas y NO "SELECT *": desde 4.3 la fila de users lleva
+        # totp_secret. Con un asterisco, el secreto del segundo factor quedaria
+        # en g.user en cada peticion protegida, al alcance de cualquier
+        # plantilla que alguien escriba despues. mfa_enabled si viene, porque
+        # es un indicador de estado y no un secreto.
         user = db.execute(
-            "SELECT id, username, session_version FROM users WHERE id = ?", (user_id,)
+            "SELECT id, username, session_version, mfa_enabled FROM users WHERE id = ?",
+            (user_id,),
         ).fetchone()
 
         # Invalidacion server-side (R9): una cookie emitida antes del ultimo

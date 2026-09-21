@@ -19,6 +19,15 @@ EVENTS = {
     "password_reset_requested": "Solicitud de recuperacion de contrasena",
     "password_reset_failure": "Token de recuperacion invalido, expirado o ya usado",
     "password_reset_success": "Contrasena cambiada por recuperacion",
+    # WBS 4.3. Nunca se registra el secreto TOTP ni el codigo: la firma de
+    # audit() no tiene por donde pasarlos (4.4.3, R14).
+    "mfa_activated": "Segundo factor activado tras validar el primer codigo",
+    # Alguien acerto la contrasena de esta cuenta y quedo detenido en el
+    # segundo factor. Es la senal que MFA existe para producir: una rafaga de
+    # estos SIN un login_success detras significa que la contrasena ya esta
+    # comprometida. Por eso es un evento propio y no un login_failure.
+    "mfa_required": "Contrasena correcta; sesion pendiente del segundo factor",
+    "mfa_failure": "Codigo TOTP incorrecto, reutilizado o fuera de la ventana",
 }
 
 MAX_FIELD_LENGTH = 64

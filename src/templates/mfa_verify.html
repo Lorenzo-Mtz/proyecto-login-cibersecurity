@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Código de verificación{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Código de verificación</h1>
+  <p>Escribe el código de 6 dígitos que muestra tu app autenticadora.</p>
+
+  {# Esta pagina no dice de quien es la cuenta ni si el codigo anterior
+     fallo por reutilizado o por incorrecto: quien llegue aqui con una
+     cookie ajena no deberia aprender nada nuevo. #}
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="codigo">Código</label>
+    <input type="text" id="codigo" name="codigo" inputmode="numeric"
+           autocomplete="one-time-code" required autofocus>
+
+    <button type="submit">Verificar</button>
+  </form>
+
+  <p class="switch-link">
+    <a href="{{ url_for('auth.login') }}">Cancelar e iniciar sesión de nuevo</a>
+  </p>
+</div>
+{% endblock %}

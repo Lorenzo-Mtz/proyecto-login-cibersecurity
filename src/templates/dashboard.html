@@ -4,6 +4,14 @@
 <div class="card">
   <h1>Hola, {{ username }}</h1>
   <p>Sesion activa.</p>
+
+  {% if mfa_enabled %}
+    <p>Segundo factor: <strong>activo</strong>.</p>
+  {% else %}
+    <p>Segundo factor: <strong>sin activar</strong>.
+       <a href="{{ url_for('auth.mfa_setup') }}">Activarlo ahora</a></p>
+  {% endif %}
+
   <form method="post" action="{{ url_for('auth.logout') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit">Cerrar sesion</button>

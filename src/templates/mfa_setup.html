@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Activar segundo factor{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Activar segundo factor</h1>
+
+  <p>Escanea este código con tu app autenticadora (Google Authenticator, Authy,
+     1Password...) y escribe el código de 6 dígitos que te muestre.</p>
+
+  {# El QR va embebido como data: URI, no servido desde una ruta propia: esa
+     ruta seria una URL que entrega el secreto compartido y necesitaria su
+     propio control de acceso. Asi solo llega a quien ya recibio esta pagina,
+     que ya paso por @login_required.
+
+     En el atributo src y no inyectado con |safe: Jinja lo escapa como
+     cualquier otro valor. #}
+  <img src="{{ qr }}" alt="Código QR de aprovisionamiento" width="220" height="220">
+
+  <p class="switch-link">Si no puedes escanear, escribe esta clave a mano:<br>
+     <code>{{ secret }}</code></p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="codigo">Código de 6 dígitos</label>
+    <input type="text" id="codigo" name="codigo" inputmode="numeric"
+           autocomplete="one-time-code" required autofocus>
+
+    <button type="submit">Confirmar y activar</button>
+  </form>
+
+  <p class="switch-link">
+    El segundo factor <strong>no queda activo</strong> hasta que este código se
+    valide, así que puedes cerrar esta página sin quedarte fuera de tu cuenta.
+  </p>
+  <p class="switch-link"><a href="{{ url_for('auth.dashboard') }}">Volver al inicio</a></p>
+</div>
+{% endblock %}

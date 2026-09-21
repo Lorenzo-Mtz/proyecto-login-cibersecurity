@@ -5,5 +5,21 @@ email-validator==2.3.0
 Flask-WTF==1.3.0
 WTForms==3.2.2
 
+# MFA por TOTP (WBS 4.3).
+#
+# pyotp implementa el RFC 6238. Esta aqui por R4: usar una libreria TOTP
+# probada en lugar de programar el algoritmo desde cero.
+#
+# qrcode genera el codigo de aprovisionamiento. Se usa su factory SVG, NO el
+# PNG: el PNG exige Pillow, una libreria de procesamiento de imagenes completa
+# (decodificadores de JPEG, TIFF, WebP y demas, buena parte en C), para
+# dibujar cuadritos negros en una reticula. El SVG no necesita nada extra.
+# Quien quiera "mejorar" el QR pasandolo a PNG estaria agregando Pillow a la
+# cadena de suministro para siempre: a cada revision de R6 y a cada corrida de
+# pip-audit de 4.5.5. Nota: qrcode arrastra colorama en cualquier caso (es
+# para su CLI), asi que si aparece en pip-audit, de ahi viene.
+pyotp==2.10.0
+qrcode==8.2
+
 # Desarrollo: suite de pruebas (ver tests/README.md)
 pytest==9.1.1
