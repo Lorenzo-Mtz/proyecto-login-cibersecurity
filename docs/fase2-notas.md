@@ -1,7 +1,7 @@
 # Notas — Fase 2: Endurecimiento OWASP
 
 **Periodo:** desde el 14 de septiembre de 2026
-**Estado:** en curso
+**Estado:** completa — cerrada el 22 de septiembre de 2026 (WBS 4.6)
 **Plan:** WBS v1.2, paquetes 4.1 – 4.6 (ver `docs/wbs.md`)
 
 > Documento vivo: se actualiza al cerrar cada paquete de trabajo. El orden de
@@ -265,13 +265,128 @@ Un detalle de la tercera: no la atrapa el archivo nuevo sino `test_mfa.py::test_
 
 **Efecto colateral del despliegue.** Ninguna cookie anterior a este cambio trae `login_at`, así que todas las sesiones abiertas —incluida la de `prueb1`— rebotan al login la primera vez. Es el *fail-closed* funcionando, y es el aspecto que tendría una migración de este control.
 
+### 4.5.5 Auditoría de dependencias
+
+**Resultado: 0 vulnerabilidades conocidas.** `pip-audit 2.10.1` contra la PyPI Advisory Database, 22 de septiembre de 2026.
+
+**Qué hace la herramienta, y qué no.** Compara **nombre + versión** de cada paquete contra avisos publicados (OSV / GHSA / CVE). No analiza el código ni cómo se usa cada librería. Un resultado limpio significa *nada conocido hoy*, no *sin vulnerabilidades*: por eso R6 pide re-correrlo en cada cierre de fase y no una sola vez.
+
+**Lo que se auditó no fue `requirements.txt`.** El archivo declara **8 paquetes**; el entorno tiene **22**. Los 14 restantes son transitivos:
+
+| Declarado | Arrastra |
+|---|---|
+| Flask | Werkzeug, Jinja2, itsdangerous, MarkupSafe, click, blinker |
+| email-validator | dnspython, idna |
+| qrcode | colorama |
+| pytest | pluggy, iniconfig, packaging, Pygments |
+
+Es el punto entero de R6: **en una app Flask los avisos caen históricamente en Werkzeug y en Jinja2**, que nadie escribió en el archivo. Auditar solo lo declarado habría sido auditar la lista corta, no la superficie real. Se auditó además `pip` (26.2.1) por separado, porque `pip freeze` lo omite de su salida.
+
+**El auditor no se instaló en el entorno que audita.** `pip-audit` arrastra su propia cadena —`requests`, `cyclonedx-python-lib`, `pip-api` y otros ~10—. Instalado en `.venv`, esos paquetes pasarían a formar parte de lo auditado, y los hallazgos del auditor quedarían mezclados con los del proyecto. El procedimiento:
+
+```powershell
+# 1. Congelar el entorno REAL antes de tocar nada
+.\.venv\Scripts\python.exe -m pip freeze > entorno-real.txt
+
+# 2. Auditor en un venv desechable, fuera del proyecto
+python -m venv auditor
+.\auditor\Scripts\python.exe -m pip install pip-audit
+
+# 3. Auditar el archivo congelado, sin resolver nada
+.\auditor\Scripts\pip-audit.exe -r entorno-real.txt --no-deps
+```
+
+`--no-deps` porque el archivo congelado ya trae **todo** fijado con `==`: no hay nada que resolver, y resolverlo abriría la puerta a auditar versiones distintas de las instaladas. Como contraste se corrió también `pip-audit -r requirements.txt` con resolución de transitivas; mismo resultado, cero hallazgos.
+
+**Separación de `requirements-dev.txt`.** Aprovechando el paquete se pagó la deuda de que `requirements.txt` mezclaba producción y desarrollo. Ahora `requirements.txt` es lo que la aplicación necesita para **correr** —y lo único que instalaría un despliegue— y `requirements-dev.txt` tiene `pytest` y `pip-audit`. No es cosmético: cada paquete instalado es superficie de cadena de suministro aunque el código nunca lo importe, y una herramienta de desarrollo en un servidor es exactamente eso.
+
+`pip-audit` queda fijado ahí con su versión aunque **no** se instale en `.venv`, para que la próxima revisión de R6 sepa con qué se auditó y pueda reproducir el resultado. El comentario del archivo lo dice explícitamente, porque de otro modo la línea invita a instalarlo donde no debe ir.
+
+**Nota que ya estaba escrita.** El comentario de `qrcode` en `requirements.txt` anticipaba esta corrida: *"si `colorama` aparece en `pip-audit`, de ahí viene"*. Apareció en la lista auditada, sin hallazgos, y confirma la decisión de usar la factory SVG en lugar de la PNG — que habría metido Pillow entero, con sus decodificadores en C, a esta auditoría y a todas las siguientes.
+
+### 4.5.6 Recorrido del OWASP Top 10
+
+Documento propio: **`docs/fase2-owasp-top10.md`**. Aquí solo lo que hay que saber para no tener que abrirlo.
+
+**Se recorrió la edición 2025, no la 2021.** Las notas de Fase 0 y el glosario usan los nombres de 2021 —por eso ahí *Cryptographic Failures* es A02 y en el recorrido es A04—, y el Charter, el Scope y el WBS dicen "OWASP Top 10" sin fijar edición. Se eligió la vigente por dos razones concretas: **A03 Software Supply Chain Failures** es literalmente el paquete 4.5.5, y **A10 Mishandling of Exceptional Conditions** es LL15 —el 500 en `/forgot-password` que delataba qué emails existían—. Con la lista de 2021, dos piezas de trabajo ya hecho no habrían tenido dónde aparecer.
+
+**Pendiente de gobernanza:** fijar la edición en el Charter (Sección 10, Registro de Cambios). Un artefacto que dice "OWASP Top 10" a secas envejece sin avisar, que es justo lo que R8 pide evitar.
+
+**El formato es tres preguntas por categoría** —¿aplica?, ¿qué control hay?, ¿qué falta?— y la que importa es la tercera. Un recorrido que solo lista lo que sí se hizo es autofelicitación; el valor está en que la autoevaluación ASVS de Fase 3 empiece con un inventario honesto y no con una hoja en blanco (R5).
+
+**Los tres huecos más grandes que salieron:**
+
+1. **Sin cabeceras de seguridad** (A02). Ninguna: ni CSP, ni HSTS, ni `X-Content-Type-Options`, ni `Referrer-Policy`. La última no es teórica — acota el riesgo residual de R11, el token que viaja en la URL, con una línea de configuración.
+2. **Sin alerting** (A09). El log se escribe con disciplina y **nadie lo lee**: sin umbrales, sin notificaciones, sin rotación, sin protección de integridad. El cambio de nombre de la categoría en 2025 —de *Monitoring* a *Alerting*— señala exactamente esto, y el proyecto lo falla entero.
+3. **Configuración de desarrollo como única configuración** (A02, A04). `debug=True`, sin servidor WSGI y sin TLS. Eso deja tres controles en estado declarativo: `SESSION_COOKIE_SECURE` funciona en local solo porque el navegador trata `localhost` como contexto seguro.
+
+**Lo que el recorrido añadió al inventario y no estaba registrado en ninguna parte:** las cabeceras ausentes; la falta de alerting, rotación e integridad del log; la ausencia de manejadores globales de error —el único `errorhandler` es el de `CSRFError`, así que un 500 imprevisto ni se maneja ni se audita—; la falta de verificación por hash de las dependencias (`--require-hashes`); y que `@login_required` **depende de que alguien se acuerde de escribirlo**: no hay *deny by default*, así que una ruta nueva sin el decorador queda abierta y nada avisa.
+
+**Lo que confirmó sin cambios:** los riesgos residuales ya registrados de R10, R11, R12, R13 y R14.
+
+**Una afirmación se corrigió al verificarla contra el código** en lugar de darla por buena: el recorrido decía "sin rollback explícito", y `register()` sí hace `db.rollback()` ante un `IntegrityError`. Lo que falta es manejo de las excepciones **no** previstas, donde la consistencia la salva el cierre de la conexión y no una decisión.
+
+## Cierre de Fase 2 (WBS 4.6)
+
+### 4.6.1 Pruebas end-to-end contra los criterios de aceptación
+
+Se recorrieron los criterios del Scope Statement (Sección 3) sobre la **aplicación real corriendo en HTTP**, no con el test client de pytest: servidor levantado en el puerto 5099 con `debug=False`, contra una base y un log temporales —la BD de desarrollo no se tocó— y conducido con `curl`, cookies y token CSRF incluidos.
+
+Eso es lo que distingue 4.6.1 de la suite de 4.6.4. Las pruebas automatizadas llaman a la aplicación por dentro; aquí se comprobó lo que viaja **por el cable**: cabeceras `Set-Cookie` reales, redirecciones reales, el enlace saliendo por la consola del servidor.
+
+| Criterio (Scope, Sección 3) | Cómo se verificó | Resultado |
+|---|---|---|
+| Las contraseñas nunca se almacenan en texto plano | `SELECT password_hash` sobre el SQLite recién creado | `$2b$12$…`, cost 12; la contraseña en claro no aparece |
+| Cookies con `HttpOnly`, `Secure`, `SameSite` | Cabecera `Set-Cookie` cruda de un login real | `Secure; HttpOnly; Path=/; SameSite=Strict` |
+| Rate limiting tras N intentos | 5 fallos y un sexto intento **con la contraseña correcta** | Rechazado. Otro usuario entró sin problema en el mismo momento: el bloqueo es por cuenta, no global |
+| El token de recuperación expira y no se reutiliza | Flujo completo con el enlace tomado de la consola | 1.er uso cambia la contraseña (la nueva entra, la vieja no); 2.º uso del mismo token rechazado, sin cambiar nada |
+| MFA validado contra una app autenticadora estándar | **4.3.6**, con Google Authenticator en un teléfono real | Ya verificado al cerrar 4.3 |
+| MFA, resto del flujo sobre HTTP | Enrolamiento, login en dos pasos y repetición | Activación con el primer código; la sesión pendiente **no** abre `/dashboard`; segundo paso correcto; código repetido rechazado |
+| Eventos de seguridad con timestamp | Lectura del log de la corrida | 15 eventos, todos con `ts`; `login_blocked` separado de `login_failure`; una línea JSON por evento; ningún secreto presente |
+
+**Como efecto secundario se vio en vivo el control de 4.5.4:** el `Expires` de la cookie llegó a exactamente 60 minutos del login, que es la expiración por inactividad recién configurada.
+
+**Dos "fallos" durante la corrida, y los dos eran del guion, no de la aplicación:**
+
+1. `GET /reset-password?token=…` devolvió **405**. La ruta real es `/reset-password/<token>`, con el token en el *path* — que es justo la razón por la que ese GET no audita, para no escribir el token en el log. El guion estaba mal escrito.
+2. El segundo paso del login con MFA falló la primera vez. El guion hizo en dos segundos lo que una persona hace en veinte, así que reutilizó **el mismo código** con el que acababa de activar el enrolamiento, que queda consumido a propósito. Era la protección contra repetición haciendo su trabajo.
+
+El segundo merece quedar escrito (**LL25**): en una corrida automatizada, un rechazo puede ser el control funcionando y no un defecto. Diagnosticar antes de "arreglar".
+
+### 4.6.3 Revisión del Risk Register y del Lessons Learned
+
+**Risk Register al cierre de la fase:**
+
+| Estado | Riesgos |
+|---|---|
+| Mitigado | R1, R4 (MFA), R6 (dependencias), R9 (sesión, con su residual **cerrado** en 4.5.4), R10 (fuerza bruta), R11 (recuperación), R14 (auditoría) |
+| Aceptado | R3 (disponibilidad), R12 (secreto TOTP sin cifrar), R13 (sin códigos de respaldo) |
+| En seguimiento | R2 (cronograma), R5 (falsa sensación de seguridad → Fase 3), R7, R8 |
+
+Ningún riesgo se cierra: siguiendo la Sección 5 del registro, los cerrados se marcan pero no se borran, y aquí ninguno dejó de aplicar.
+
+**Residuales que quedan abiertos y conocidos:** sin límite por IP (R10, *password spraying*); sin límite de tasa en `/forgot-password` y token en la URL (R11); secreto TOTP en claro (R12); sin códigos de respaldo (R13); contraseña escrita en el campo "Usuario" (R14). Más los **cinco huecos nuevos** que destapó 4.5.6, ya en la lista de deuda.
+
+**Lessons Learned:** se agregan LL24 y LL25. La revisión formal completa del log corresponde al cierre del proyecto (M5).
+
+### 4.6.2 y 4.6.4
+
+4.6.4 se ejecutó anticipadamente durante 4.1 y quedó registrado en el Charter (cambio #3). 4.6.2 es el commit de cierre.
+
 ---
 
 ## Deuda y pendientes de Fase 2
 
 - [x] ~~4.5.4: riesgo residual de R9~~: cerrado. El enunciado estaba **de menos** —la cookie robada no vivía 14 días, vivía indefinidamente porque el uso la renovaba—. Resuelto con 60 min de inactividad + 12 h de vida máxima. Ver 4.5.4 y LL23.
-- [ ] 4.5.5: `pip-audit` sobre las dependencias (R6).
-- [ ] 4.5.6: recorrido documentado del OWASP Top 10.
+- [x] ~~4.5.5: `pip-audit` sobre las dependencias (R6)~~: hecho. 0 vulnerabilidades conocidas sobre los 22 paquetes del entorno (no solo los 8 declarados) más `pip`. De paso se separó `requirements-dev.txt`. Ver 4.5.5.
+- [x] ~~4.5.6: recorrido documentado del OWASP Top 10~~: hecho, contra la edición **2025**. Ver `docs/fase2-owasp-top10.md` y la sección 4.5.6.
+- [ ] **Gobernanza:** fijar la edición del OWASP Top 10 en el Charter (Sección 10). Los artefactos dicen "OWASP Top 10" sin edición, y eso envejece sin avisar (R8).
+- [ ] **A02 — sin cabeceras de seguridad.** Ni CSP, ni HSTS, ni `X-Content-Type-Options`, ni `X-Frame-Options`, ni `Referrer-Policy`. Esta última acota el riesgo residual de R11 con una línea.
+- [ ] **A09 — sin alerting.** El log se escribe y nadie lo lee: sin umbrales, sin rotación, sin protección de integridad del archivo.
+- [ ] **A10 — sin manejadores globales de error.** El único `errorhandler` es el de `CSRFError`; un 500 imprevisto ni se maneja ni se audita, y con `debug=True` devolvería el traceback.
+- [ ] **A03/A08 — sin `--require-hashes` ni SBOM.** Se fija la versión, no el artefacto.
+- [ ] **A01 — `@login_required` no es *deny by default*.** Una ruta nueva sin el decorador queda abierta y nada avisa.
+- [ ] **A07 — sin comprobación contra contraseñas filtradas.** Lo pide ASVS Level 1; candidato claro para Fase 3.
 - [x] ~~Sin pruebas automatizadas en el repo~~: resuelto durante 4.1. Se incorporó `pytest` y la carpeta `tests/` (56 pruebas sobre los paquetes 4.1, 4.2, 4.4, 4.5.2 y 4.5.3). Ver `tests/README.md`. **Pendiente formal:** registrar el cambio de alcance en el Charter y agregar el paquete al WBS.
 - [ ] `tests/`: falta cubrir 4.5.1 (`validate_secret_key`) y el resto de las validaciones propias de `/register` (formato del email, límite de 72 bytes). La política de longitud ya quedó cubierta en 4.2.7.
 - [ ] Riesgo residual de R14: una contraseña escrita por error en el campo "Usuario" queda en el log.

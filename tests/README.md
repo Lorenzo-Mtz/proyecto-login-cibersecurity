@@ -9,7 +9,7 @@ paquete se dio por cerrado.
 ```powershell
 cd C:\Users\loren\Proyecto\proyecto-login-cibersecurity
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 pytest
 ```
 

@@ -1,0 +1,25 @@
+# Dependencias de DESARROLLO (WBS 4.5.5).
+#
+# Separadas de requirements.txt porque la aplicacion no las necesita para
+# correr: un despliegue instala solo requirements.txt. Mientras estuvieron
+# juntas, cualquier instalacion del proyecto arrastraba herramientas de
+# desarrollo -- mas paquetes instalados es mas superficie de cadena de
+# suministro (R6), aunque el codigo nunca los importe.
+
+# Suite de pruebas (ver tests/README.md). Esta SI va en el .venv del proyecto:
+#   pip install -r requirements-dev.txt
+pytest==9.1.1
+
+# Auditoria de dependencias (R6). Compara nombre + version de cada paquete
+# contra la PyPI Advisory Database (OSV).
+#
+# OJO: esta NO se instala en el entorno que audita. pip-audit arrastra su
+# propia cadena (requests, cyclonedx-python-lib, pip-api y otros ~10), que
+# pasarian a formar parte de lo auditado y mezclarian los hallazgos del
+# auditor con los del proyecto. Se corre desde un venv desechable contra un
+# `pip freeze` del entorno real. Procedimiento completo en
+# docs/fase2-notas.md, seccion 4.5.5.
+#
+# Se fija la version igual que las demas para que la proxima revision de R6
+# sepa con que se audito y pueda reproducir el resultado.
+pip-audit==2.10.1

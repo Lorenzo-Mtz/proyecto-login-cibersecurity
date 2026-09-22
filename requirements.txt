@@ -21,5 +21,6 @@ WTForms==3.2.2
 pyotp==2.10.0
 qrcode==8.2
 
-# Desarrollo: suite de pruebas (ver tests/README.md)
-pytest==9.1.1
+# Las herramientas de desarrollo (pytest, pip-audit) viven en
+# requirements-dev.txt desde 4.5.5: este archivo es lo que la aplicacion
+# necesita para CORRER, y es lo unico que instalaria un despliegue.
