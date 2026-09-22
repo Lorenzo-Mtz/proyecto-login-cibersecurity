@@ -28,6 +28,11 @@ EVENTS = {
     # comprometida. Por eso es un evento propio y no un login_failure.
     "mfa_required": "Contrasena correcta; sesion pendiente del segundo factor",
     "mfa_failure": "Codigo TOTP incorrecto, reutilizado o fuera de la ventana",
+    # WBS 4.5.4. Lo emite solo el tope absoluto. La expiracion por inactividad
+    # no puede registrarse: Flask descarta la cookie vencida antes de la vista
+    # y la sesion llega vacia, sin user_id que anotar. Sin umbral en el texto:
+    # si el tope cambia, el catalogo no miente.
+    "session_expired": "Cookie rechazada por superar la vida maxima de la sesion",
 }
 
 MAX_FIELD_LENGTH = 64

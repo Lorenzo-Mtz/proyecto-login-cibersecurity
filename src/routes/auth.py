@@ -169,6 +169,10 @@ def login():
         session.permanent = True
         session["user_id"] = user["id"]
         session["session_version"] = user["session_version"]
+        # Marca de nacimiento de la sesion, para el tope absoluto de 4.5.4. El
+        # cliente no la puede retrasar: la firma se lo impide, y sin esa
+        # garantia el tope no existiria.
+        session["login_at"] = int(time.time())
         audit("login_success", user_id=user["id"], username=user["username"])
         flash("Sesión iniciada")
         return redirect(url_for("auth.dashboard"))
@@ -454,6 +458,7 @@ def mfa_verify():
         session.permanent = True
         session["user_id"] = user["id"]
         session["session_version"] = user["session_version"]
+        session["login_at"] = int(time.time())
         # login_success y no un evento aparte: en los dos caminos significa
         # exactamente lo mismo, que se creo una sesion.
         audit("login_success", user_id=user["id"], username=user["username"])

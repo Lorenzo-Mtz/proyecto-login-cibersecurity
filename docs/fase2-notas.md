@@ -209,11 +209,67 @@ El rechazo del código reutilizado contra un teléfono real es lo que confirma q
 
 **Hueco conocido de cobertura, medido y no supuesto:** sustituir `hmac.compare_digest` por `==` **pasa las 28 pruebas**. Medir microsegundos sobre seis dígitos dentro del mismo proceso no da señal estable, a diferencia de los ~330 ms de bcrypt que sí sostienen `test_sin_oraculo_por_latencia` en 4.1. **Ese control se sostiene por revisión de código, no por prueba** (ver LL22).
 
+### 4.5.4 Caducidad de la sesión
+
+**El punto de partida estaba mal entendido.** La deuda decía "una cookie robada vive hasta 14 días si el usuario nunca hace logout". Al leer el código de Flask instalado resultó ser peor: no vivía 14 días, vivía **indefinidamente**.
+
+`PERMANENT_SESSION_LIFETIME` **no es una vida máxima**. Son dos piezas:
+
+```python
+# flask/sessions.py -- open_session
+max_age = int(app.permanent_session_lifetime.total_seconds())
+data = s.loads(val, max_age=max_age)          # valida el timestamp FIRMADO
+
+# flask/sessions.py -- should_set_cookie
+return session.modified or (
+    session.permanent and app.config["SESSION_REFRESH_EACH_REQUEST"]   # default: True
+)
+```
+
+Lo bueno: el límite **se hace cumplir del lado del servidor**, contra el timestamp que va dentro de la firma, no contra el `Expires` de la cookie —que el cliente puede ignorar—. Lo malo: como la sesión se marca `permanent` y `SESSION_REFRESH_EACH_REQUEST` viene en `True`, la cookie se vuelve a firmar en cada petición con un timestamp nuevo. **La ventana se desliza.** Quien usa la cookie la renueva al usarla.
+
+**Son dos controles distintos, no dos formas de configurar el mismo:**
+
+| | Vida máxima | Expiración por inactividad |
+|---|---|---|
+| Se mide desde | el **login** | la **última petición** |
+| Mata la sesión de | todo el mundo, cada N tiempo | quien dejó de usar la app |
+| ¿Flask lo trae? | **No** | Sí, es `PERMANENT_SESSION_LIFETIME` |
+| ¿La actividad lo renueva? | **No** | Sí |
+
+Se implementaron los dos: **60 minutos de inactividad** y **12 horas de vida máxima**. El segundo es el que cierra el riesgo residual de R9, porque es el único que una cookie robada no puede estirar usándola; el primero solo, que era la lectura intuitiva del problema, no lo habría cerrado.
+
+**Un camino descartado.** Poner `SESSION_REFRESH_EACH_REQUEST = False` parece el arreglo obvio —deja de deslizar la ventana— y es una trampa: la cookie solo se re-emite cuando la sesión se **modifica**, así que el timestamp queda congelado en un instante arbitrario y el usuario activo se ve expulsado a media tarea sin que nada lo explique. Da un límite absoluto, pero medido desde un evento que nadie controla.
+
+**Implementación.** `SESSION_ABSOLUTE_LIFETIME_SECONDS` en `config.py` —en segundos, como los otros tres umbrales del proyecto, para que una prueba pueda bajarlo— y la comprobación en `@login_required`, **antes** del `SELECT`: una cookie vencida no tiene por qué costar una consulta. La marca es `session["login_at"]`, escrita en los **dos** puntos que abren sesión (`login()` y `mfa_verify()`); olvidar el segundo habría dejado sin tope justo a las cuentas con MFA.
+
+**Tres decisiones que no son evidentes:**
+
+| Decisión | Por qué |
+|---|---|
+| `login_at` va en la **cookie firmada**, no en la BD | Es estado de la conversación con este navegador, no de la cuenta. La firma da la integridad que aquí sí hace falta: el cliente no puede retrasar la marca. Es el mismo argumento que `pending_mfa_at` en 4.3 |
+| La **ausencia** de `login_at` se trata como vencida (*fail-closed*) | Cubre las cookies emitidas antes de este cambio y cualquier punto futuro que abra sesión y olvide la marca. Sale gratis con `session.get("login_at", 0)`, sin una rama aparte |
+| Evento propio `session_expired`, no `session_rejected` | Caducar y ser revocada son hechos distintos. Mezclarlos pierde la señal al leer el log, que es justo para lo que se construyó (LL16, LL19). El catálogo pasa a **15** |
+
+**El aviso al usuario es genérico a propósito.** Decir "tu sesión caducó" le confirmaría a quien usa una cookie robada que la cookie era buena y solo llegó tarde. El mensaje es el mismo que en `/mfa`: *vuelve a iniciar sesión*.
+
+**Verificación (6 pruebas, `tests/test_session_expiry.py`).** La central es `test_la_actividad_no_renueva_el_tope`: golpea `/dashboard` sin parar mientras el tope corre y exige además que la sesión se haya usado al menos tres veces, porque una sesión que muriera al primer intento pasaría la prueba midiendo otra cosa. Es la única que distingue el control absoluto del de inactividad; sin ella, las demás pasarían igual aunque el tope se renovara en cada petición —que era el defecto original—.
+
+Las aserciones son sobre el **evento del log** y no solo sobre el redirect, con un `assert "session_rejected" not in nombres` explícito: una sesión rechazada por `session_version` también redirige al login, y sin ese guard la prueba habría estado verificando 4.5.2 en lugar de 4.5.4.
+
+**Mutaciones (LL14): cuatro, las cuatro atrapadas.** Comparación invertida (5 de 6 en rojo); `login()` sin la marca (4 en rojo); `mfa_verify()` sin la marca (1 en rojo); evento de auditoría equivocado (2 en rojo, gracias al guard de arriba). **Sin huecos que documentar bajo LL22 esta vez.**
+
+Un detalle de la tercera: no la atrapa el archivo nuevo sino `test_mfa.py::test_el_login_completo_con_mfa_abre_sesion`, que asevera un 200 en `/dashboard`. La cobertura del camino con MFA es real pero **incidental**, no de diseño: si alguien reorganiza `test_mfa.py` se pierde sin que nada lo señale.
+
+**Limitación conocida.** La expiración por inactividad **no puede auditarse**: Flask descarta la cookie vencida en `open_session` y la sesión llega vacía a la vista, indistinguible de un visitante que nunca inició sesión. No hay `user_id` a quien atribuir el evento. Queda fijado con una prueba que afirma esa ausencia, para que salte si algún día cambia.
+
+**Efecto colateral del despliegue.** Ninguna cookie anterior a este cambio trae `login_at`, así que todas las sesiones abiertas —incluida la de `prueb1`— rebotan al login la primera vez. Es el *fail-closed* funcionando, y es el aspecto que tendría una migración de este control.
+
 ---
 
 ## Deuda y pendientes de Fase 2
 
-- [ ] 4.5.4: riesgo residual de R9 (sesión de 14 días sin expiración por inactividad).
+- [x] ~~4.5.4: riesgo residual de R9~~: cerrado. El enunciado estaba **de menos** —la cookie robada no vivía 14 días, vivía indefinidamente porque el uso la renovaba—. Resuelto con 60 min de inactividad + 12 h de vida máxima. Ver 4.5.4 y LL23.
 - [ ] 4.5.5: `pip-audit` sobre las dependencias (R6).
 - [ ] 4.5.6: recorrido documentado del OWASP Top 10.
 - [x] ~~Sin pruebas automatizadas en el repo~~: resuelto durante 4.1. Se incorporó `pytest` y la carpeta `tests/` (56 pruebas sobre los paquetes 4.1, 4.2, 4.4, 4.5.2 y 4.5.3). Ver `tests/README.md`. **Pendiente formal:** registrar el cambio de alcance en el Charter y agregar el paquete al WBS.

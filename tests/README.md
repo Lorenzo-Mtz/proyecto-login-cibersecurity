@@ -20,10 +20,16 @@ pytest tests/test_bruteforce.py
 pytest tests/test_bruteforce.py::test_sin_oraculo_por_latencia
 ```
 
-La suite son 84 pruebas y tarda ~95 s. Casi todo es bcrypt con cost 12: cada
-login cuesta ~330 ms **a propósito**, y tres pruebas esperan tiempo real a que
+La suite son 90 pruebas y tarda ~100 s. Casi todo es bcrypt con cost 12: cada
+login cuesta ~330 ms **a propósito**, y seis pruebas esperan tiempo real a que
 venza algo (`test_el_bloqueo_expira_solo`, 11 s; `test_un_token_expirado_es_rechazado`,
-3 s; `test_la_sesion_pendiente_caduca`, 2 s). No es lentitud accidental.
+3 s; `test_la_sesion_pendiente_caduca`, 2 s; las tres de caducidad de sesión de
+`test_session_expiry.py`, 3 s cada una). No es lentitud accidental.
+
+**El tiempo total no es señal de nada.** En la misma máquina y con el mismo
+código se han medido 96 s, 128 s, 140 s y 202 s en una sola sesión. La variación
+es del sistema operativo (LL21), no del proyecto: no salgas a buscar una
+regresión de rendimiento a partir de una corrida lenta.
 
 Las pruebas de TOTP **no esperan** a que cambie el periodo: `verificar_codigo()`
 recibe el reloj como parámetro (`ahora=`), así que la ventana de ±1 se prueba
@@ -48,6 +54,7 @@ auditoría nuevos en un directorio temporal.
 | `test_csrf.py` | 4.5.3 | Tokens CSRF, logout solo por POST y *open redirect* |
 | `test_password_reset.py` | 4.2 | Recuperación de contraseña: un solo uso, expiración, sin enumeración de cuentas y sin fuga del token (R11) |
 | `test_mfa.py` | 4.3 | Segundo factor TOTP: ventana de ±1 periodo, rechazo de códigos reutilizados, login en dos pasos y límite de intentos (R4, R12) |
+| `test_session_expiry.py` | 4.5.4 | Caducidad de la sesión: expiración por inactividad y vida máxima que la actividad no renueva (R9) |
 
 Cada archivo abre con un docstring que explica **qué propiedad prueba y qué
 pasaría si esa propiedad se rompiera**. Esa es la parte que hay que leer antes
@@ -110,6 +117,11 @@ rompe las pruebas por una razón que no tiene nada que ver con el código.
   pero el formato del email y el límite de 72 bytes siguen sin prueba propia.
 - **WBS 4.2**: falta cubrir el riesgo residual, cuando se atienda — que pedir
   enlaces en serie no deba poder mantener invalidado el de la víctima.
+- **WBS 4.5.4**: el camino con MFA no tiene prueba de caducidad **propia**.
+  Quitar `login_at` de `mfa_verify()` sí se atrapa, pero por rebote: lo detecta
+  `test_mfa.py::test_el_login_completo_con_mfa_abre_sesion`, que asevera un 200
+  en `/dashboard`. Es cobertura real e incidental; si alguien reorganiza ese
+  archivo, se pierde sin que nada lo señale.
 - **WBS 4.3**: sustituir `hmac.compare_digest` por `==` en `mfa.py` **no lo
   atrapa ninguna prueba** — medido con una mutación, no supuesto. Medir
   microsegundos sobre seis dígitos dentro del mismo proceso no da una señal

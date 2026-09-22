@@ -1,6 +1,7 @@
 from functools import wraps
+import time
 
-from flask import g, redirect, session, url_for
+from flask import current_app, flash, g, redirect, session, url_for
 
 from src.database import get_db
 from src.audit import audit
@@ -18,6 +19,35 @@ def login_required(view):
     def wrapped_view(*args, **kwargs):
         user_id = session.get("user_id")
         if not user_id:
+            return redirect(url_for("auth.login"))
+
+        # WBS 4.5.4 - Vida maxima de la sesion (R9). Va ANTES del SELECT: una
+        # cookie vencida no tiene por que costar una consulta. Como efecto
+        # secundario decide el evento cuando la cookie esta vencida Y trae una
+        # session_version vieja: gana session_expired, que es lo primero que
+        # dejo de ser cierto.
+        #
+        # Esto NO duplica PERMANENT_SESSION_LIFETIME. Aquel cuenta desde la
+        # ultima peticion, lo aplica Flask solo y se desliza con el uso; este
+        # cuenta desde el login y la actividad NO lo renueva. Es el unico de
+        # los dos que una cookie robada no puede estirar usandola.
+        #
+        # El 0 por default es el fail-closed, sin una rama aparte: una sesion
+        # sin login_at da una antiguedad enorme y se rechaza sola. Asi queda
+        # cubierta tanto la cookie emitida antes de 4.5.4 como cualquier punto
+        # futuro que abra sesion y olvide poner la marca.
+        vida = current_app.config["SESSION_ABSOLUTE_LIFETIME_SECONDS"]
+        nacida = session.get("login_at", 0)
+
+        if time.time() - nacida > vida:
+            # Sin username: todavia no hay SELECT. Igual que en session_rejected.
+            audit("session_expired", user_id=user_id)
+            session.clear()
+            # Mensaje generico a proposito. Decir "tu sesion caduco" le
+            # confirmaria a quien usa una cookie robada que la cookie era
+            # buena y que solo llego tarde; asi se lee igual sea cual sea el
+            # motivo del rechazo.
+            flash("Vuelve a iniciar sesion.")
             return redirect(url_for("auth.login"))
 
         db = get_db()

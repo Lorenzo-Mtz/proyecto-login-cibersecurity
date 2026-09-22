@@ -34,7 +34,25 @@ class Config:
     #
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Strict"
-    PERMANENT_SESSION_LIFETIME = timedelta(days=14)
+
+    # --- WBS 4.5.4 - Expiracion por inactividad (R9) ---
+    # El nombre lo pone Flask y despista: NO es la vida maxima de la sesion,
+    # es cuanto sobrevive la cookie SIN peticiones. Flask lo valida contra el
+    # timestamp que va dentro de la firma (open_session -> max_age), asi que
+    # se hace cumplir del lado del servidor y no depende del Expires que el
+    # navegador puede ignorar. Pero SESSION_REFRESH_EACH_REQUEST viene en True
+    # por default y vuelve a firmar la cookie en cada peticion: la ventana se
+    # desliza, y por esta via un usuario activo no expira nunca.
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
+
+    # --- WBS 4.5.4 - Vida maxima de la sesion (R9) ---
+    # Justo lo que la linea de arriba no hace. Se cuenta desde el login y la
+    # actividad NO lo renueva: es el unico limite que una cookie robada no
+    # puede estirar con solo usarla. Flask no lo trae; se comprueba en
+    # @login_required contra session["login_at"].
+    # En segundos y no timedelta, como los demas umbrales del proyecto, para
+    # que la prueba pueda bajarlo a segundos y ver el vencimiento de verdad.
+    SESSION_ABSOLUTE_LIFETIME_SECONDS = 12*60*60
 
     # --- WBS 4.1.1 - Politica anti fuerza bruta ---
     # En config y no en auth.py para que la prueba de 4.1.5 pueda bajar la
