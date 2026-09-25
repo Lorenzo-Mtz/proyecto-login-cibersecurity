@@ -41,6 +41,10 @@ El desarrollo se organiza en cuatro fases bajo un enfoque de planeación gradual
 - Checklist de autoevaluación contra OWASP ASVS Level 1
 - Threat model básico del sistema
 
+**Fase 4 — Remediación acotada** *(agregada en Septiembre 2026; ver Charter, Sección 10 — cambio #6)***:**
+- Cierre de los siete gaps de Nivel 1 identificados en la Fase 3 (`docs/fase3-consolidacion.md`)
+- Cada gap verificado contra el requisito ASVS o la amenaza del threat model que cierra
+
 ### 2.2 Entregables de gestión de proyecto (PM deliverables)
 
 - Project Charter
@@ -64,6 +68,7 @@ El desarrollo se organiza en cuatro fases bajo un enfoque de planeación gradual
 | MFA | El código TOTP es validado correctamente contra una app autenticadora estándar (ej. Google Authenticator) |
 | Logging de auditoría | Eventos de seguridad clave (login fallido, login exitoso, cambio de contraseña) quedan registrados con timestamp |
 | ASVS Level 1 | Checklist documentado con estatus pass/fail por cada control aplicable de nivel 1 |
+| Fase 4 (remediación acotada) | Cada uno de los siete gaps de Nivel 1 cerrado y verificado contra el requisito ASVS o la amenaza que lo originó, con prueba automatizada donde el control lo permita |
 
 ---
 

@@ -1,7 +1,8 @@
 # Estructura de Desglose del Trabajo / Work Breakdown Structure (WBS)
 
 **Proyecto:** Sistema de Login Seguro — Proyecto de Aprendizaje en Ciberseguridad
-**Enfoque:** Rolling Wave Planning — Fases 0, 1, 2 y 3 desglosadas a nivel de paquete de trabajo (*work package*). Dentro de la Fase 3, el detalle de 5.3.5 queda pendiente hasta que 5.3.1 y 5.3.2 den el número real de requisitos aplicables.
+**Enfoque:** Rolling Wave Planning — todas las fases desglosadas a nivel de paquete de trabajo (*work package*).
+**v1.5** — se agrega la Fase 4, remediación acotada (ver Charter, Sección 10 — Registro de Cambios, cambio #6). El cierre del proyecto pasa de 6.0 a **7.0**
 **v1.4** — desglose de la Fase 3 (ver Charter, Sección 10 — Registro de Cambios, cambio #5)
 **v1.3** — se agrega la tarea 4.6.4, suite de pruebas automatizadas (ver Charter, Sección 10 — Registro de Cambios, cambio #3)
 **v1.2** — desglose de la Fase 2 (ver Charter, Sección 10 — Registro de Cambios, cambio #2)
@@ -178,11 +179,66 @@
 
 ---
 
-## 6.0 Cierre del Proyecto
+## 6.0 Fase 4 — Remediación acotada *(detallado)*
 
-- 6.1 Lessons Learned Log final — **incluye la entrada pendiente del cierre de Fase 0 (tarea 2.7.3)**
-- 6.2 Glosario bilingüe finalizado — **incluye los términos pendientes del tema 0.1, HTTP/HTTPS**
-- 6.3 Retrospectiva general del proyecto
+> **Alcance cerrado a los siete gaps de Nivel 1** de `docs/fase3-consolidacion.md`. No se
+> amplía sobre la marcha: los gaps de Nivel 2 y 3 quedan fuera, y si se quieren atender
+> se decide por el Registro de Cambios como se decidió esta fase. Es R1 y R16 aplicados.
+>
+> **Criterio de terminado objetivo:** cada paquete cierra un requisito ASVS o una amenaza
+> del threat model identificados en la Fase 3. No se da por hecho sin la prueba que lo
+> sostenga — los dos controles sin prueba de C24 y C44 ya enseñaron la diferencia.
+
+**6.1 Cabeceras de seguridad (G1)**
+- 6.1.1 `after_request` con `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` y `Referrer-Policy`
+- 6.1.2 Pruebas: cada cabecera presente en toda respuesta, incluidas las de error
+- *Cierra:* V3.2.1, parte de TM-34 (por `Referrer-Policy`), gap A02
+
+**6.2 Prefijo de la cookie de sesión (G2)**
+- 6.2.1 Renombrar la cookie con el prefijo `__Host-`
+- 6.2.2 Prueba sobre el `Set-Cookie` real, y revisar que la suite siga en verde
+- *Cierra:* V3.3.1
+
+**6.3 Revocación al reautenticar (G3)**
+- 6.3.1 Incrementar `session_version` en `login()` y en `mfa_verify()`
+- 6.3.2 Prueba: una cookie copiada antes de volver a autenticarse deja de servir
+- 6.3.3 Mutación: quitar el incremento y confirmar que la prueba se pone en rojo
+- *Cierra:* V7.2.4, la vía abierta de R9
+
+**6.4 Manejo global de errores (G4)**
+- 6.4.1 Manejadores de 404 y 500 que no filtren detalle interno
+- 6.4.2 Evento de auditoría para el 500, sin volcar la excepción al log
+- 6.4.3 Pruebas: provocar ambos y verificar respuesta y registro
+- *Cierra:* TM-14, parte de TM-11, gap A10
+
+**6.5 Rotación del registro de auditoría (G5)**
+- 6.5.1 `RotatingFileHandler` con techo de tamaño y número de respaldos
+- 6.5.2 Prueba: el archivo rota al superar el techo y no se pierden eventos
+- *Cierra:* TM-28, parte de R18, gap A09
+
+**6.6 Validación del nombre de usuario (G6)**
+- 6.6.1 Definir la regla: lista blanca de caracteres, longitud mínima y máxima
+- 6.6.2 Implementarla en `/register` y documentarla junto a la política de contraseñas
+- 6.6.3 Pruebas: se rechazan los caracteres fuera de la lista y la longitud excedida
+- *Cierra:* V2.1.1, V2.2.1, R20, LL20
+
+**6.7 Plazos de remediación de dependencias (G7)**
+- 6.7.1 Definir plazos basados en riesgo y registrarlos en el plan de respuesta de R6
+- *Cierra:* V15.1.1, el hueco del propio plan de R6
+
+**6.8 Cierre de Fase 4**
+- 6.8.1 Re-ejecutar la autoevaluación ASVS sobre los requisitos afectados y actualizar `docs/fase3-asvs-l1.md`
+- 6.8.2 Revisión del Risk Register (R9, R20 y los que cambien de estado)
+- 6.8.3 Entrada en Lessons Learned Log (parcial)
+- 6.8.4 Commit final de Fase 4 y etiqueta `fase-4`
+
+---
+
+## 7.0 Cierre del Proyecto
+
+- 7.1 Lessons Learned Log final — **incluye la entrada pendiente del cierre de Fase 0 (tarea 2.7.3)**
+- 7.2 Glosario bilingüe finalizado — **incluye los términos pendientes del tema 0.1, HTTP/HTTPS**
+- 7.3 Retrospectiva general del proyecto
 
 ---
 
