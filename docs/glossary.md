@@ -69,7 +69,26 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 
 ## 4. Conceptos de Ciberseguridad
 
-### 4.1 Criptografía y Hashing (Fase 0.2)
+### 4.1 Protocolo HTTP / HTTPS (Fase 0.1)
+
+| Español | English | Definición |
+|---|---|---|
+| Protocolo de transferencia de hipertexto | HTTP | Protocolo de petición y respuesta sobre el que funciona la web. Viaja en **texto plano**: quien esté en la red lee y modifica todo lo que pasa, credenciales incluidas. Es la razón de que exista HTTPS |
+| HTTP sobre TLS | HTTPS | HTTP dentro de un canal cifrado. Aporta **tres** cosas distintas que conviene no confundir: confidencialidad (nadie lee), integridad (nadie altera) y autenticación del servidor (hablas con quien crees). El proyecto declara `SESSION_COOKIE_SECURE` pero **no tiene TLS**, así que hoy las tres son declarativas (gap G14) |
+| Seguridad de la capa de transporte | TLS (Transport Layer Security) | El protocolo de cifrado que envuelve a HTTP. *SSL* es su nombre anterior y todas sus versiones están obsoletas; ASVS V12.1.1 exige TLS 1.2 o 1.3 |
+| Sin estado | Stateless | HTTP **no recuerda nada** entre una petición y la siguiente. Es el hecho del que nace todo lo demás: si el servidor no recuerda quién eres, alguien tiene que llevar esa información consigo — y de ahí salen las cookies, las sesiones y prácticamente todos los problemas que este proyecto trata |
+| Método HTTP | HTTP method | El verbo de la petición: `GET`, `POST`, `PUT`, `DELETE`. La especificación llama **seguros** a los que no deben cambiar estado (`GET`, `HEAD`), y por eso `/logout` se movió a `POST` en 4.5.3 (ASVS V3.5.3) |
+| Código de estado | Status code | El número de la respuesta: 200, 302, 404, 500. Es **observable por quien ataca**, así que dos caminos que quieran ser indistinguibles tienen que devolver el mismo: un 500 delata tanto como un mensaje distinto (LL15) |
+| Cabecera HTTP | HTTP header | Metadatos que acompañan a la petición o a la respuesta. Varios controles del proyecto **son** exactamente cabeceras: `Set-Cookie`, `Content-Security-Policy`, `Referrer-Policy`, `Strict-Transport-Security` |
+| Cadena de consulta | Query string | La parte de la URL que sigue a `?`. Junto con el *path*, es lo que queda en el historial del navegador y en los registros de cualquier intermediario — por eso ASVS V14.2.1 prohíbe poner ahí datos sensibles, y por eso el token de recuperación en la URL es un incumplimiento abierto (gap G10) |
+| Cuerpo de la petición | Request body | Lo que viaja dentro de un `POST`, fuera de la URL. No queda en el historial ni en los registros de los intermediarios, que es la razón de mover ahí cualquier dato sensible |
+| Origen | Origin | La tripleta **esquema + dominio + puerto**. Es la unidad con la que el navegador decide qué puede leer qué: de ella dependen la política del mismo origen, CORS y el prefijo `__Host-` de las cookies |
+| Contexto seguro | Secure context | Origen que el navegador considera confiable: HTTPS y, por excepción, `localhost`. Es lo que permite que una cookie `Secure` funcione en desarrollo local sin TLS — y también la razón de que ese control **hoy no se esté ejerciendo de verdad** |
+| Ataque de intermediario | Man-in-the-middle (MitM) | Alguien situado en la red que puede leer o alterar el tráfico. Es el perfil de atacante **P4** del threat model, y sin TLS no hay ningún control que lo estorbe |
+| HSTS | HTTP Strict Transport Security | Cabecera con la que el servidor le dice al navegador *"a este dominio, siempre por HTTPS"*. **No debe emitirse sobre HTTP plano**: se ignora, y si llegara a tomar efecto sin TLS dejaría el sitio inalcanzable. Por eso V3.4.1 sigue abierto hasta que exista despliegue |
+| Certificado y autoridad certificadora | Certificate / Certificate Authority (CA) | El documento que acredita que un dominio es quien dice ser, firmado por un tercero en el que el navegador confía. Es lo que convierte el cifrado en **autenticación**: sin un certificado válido, TLS te protege de un espía pero no te dice con quién estás hablando |
+
+### 4.2 Criptografía y Hashing (Fase 0.2)
 
 | Español | English | Definición |
 |---|---|---|
@@ -81,7 +100,7 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Tabla arcoíris | Rainbow Table | Tabla precalculada de hashes usada por atacantes para revertir hashes rápidamente — ineficaz contra hashes con salt |
 | Ataque de fuerza bruta | Brute-force attack | Intentar sistemáticamente muchas combinaciones de contraseñas hasta encontrar la correcta; su viabilidad depende de qué tan rápido se pueda calcular cada intento |
 
-### 4.2 Autenticación y Autorización (Fase 0.3)
+### 4.3 Autenticación y Autorización (Fase 0.3)
 
 | Español | English | Definición |
 |---|---|---|
@@ -93,7 +112,7 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Principio de mínimo privilegio | Principle of Least Privilege | Un usuario o proceso debe tener solo los permisos mínimos necesarios para su función |
 
 
-### 4.3 Gestión de Sesiones (Fase 0.4)
+### 4.4 Gestión de Sesiones (Fase 0.4)
 
 | Español | English | Definición |
 |---|---|---|
@@ -109,7 +128,7 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Regeneración de ID de sesión | Session ID regeneration | Práctica de emitir un nuevo identificador de sesión justo después de un login exitoso (o cambio de privilegios), para invalidar cualquier ID previamente fijado por un atacante |
 | Invalidación de sesión / Cierre de sesión | Session invalidation / Logout | Acción de destruir la sesión en el servidor (no solo borrar la cookie del cliente) al cerrar sesión, para que el token ya no sirva |
 
-### 4.4 Protocolos de Verificación y Recuperación (Fase 0.5)
+### 4.5 Protocolos de Verificación y Recuperación (Fase 0.5)
 
 | Español | English | Definición |
 |---|---|---|
@@ -122,7 +141,7 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Código QR de aprovisionamiento | Provisioning QR code | Código QR que codifica la URL `otpauth://` con el secreto compartido, usado para configurar una app autenticadora sin transcribir el secreto a mano |
 | RFC 6238 | RFC 6238 | Estándar técnico (IETF) que define el algoritmo TOTP |
 
-### 4.5 Fundamentos de OWASP (Fase 0.6)
+### 4.6 Fundamentos de OWASP (Fase 0.6)
 
 | Español | English | Definición |
 |---|---|---|
@@ -136,7 +155,7 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 | Control de acceso roto | Broken Access Control | Categoría del OWASP Top 10 donde fallas en las reglas de autorización permiten a un usuario acceder a datos o funciones que no le corresponden |
 | Fallas criptográficas | Cryptographic Failures | Categoría del OWASP Top 10 relacionada con datos sensibles expuestos por cifrado ausente, débil o mal implementado |
 
-### 4.6 Endurecimiento OWASP (Fase 2)
+### 4.7 Endurecimiento OWASP (Fase 2)
 
 | Español | English | Definición |
 |---|---|---|
@@ -180,4 +199,4 @@ Glosario bilingüe de términos técnicos usados a lo largo del proyecto. Se va 
 
 ---
 
-*Última actualización: Septiembre 2026 — se amplía 4.6 Endurecimiento OWASP con los términos del recorrido del Top 10 (Fase 2, WBS 4.5.6); antes, con los de cadena de suministro (WBS 4.5.5); antes, con los de caducidad de sesión (WBS 4.5.4); antes, con los de MFA/TOTP (WBS 4.3); antes, con los de recuperación de contraseña (WBS 4.2) y fuerza bruta (WBS 4.1). Las secciones 4.1 – 4.5 se completaron durante la Fase 0 (temas 0.2 a 0.6).*
+*Última actualización: Septiembre 2026 — **cierre del proyecto (WBS 7.2)**: se agrega la sección **4.1 Protocolo HTTP/HTTPS**, que era el único tema de la Fase 0 sin términos en el glosario, y las secciones siguientes se renumeran (la antigua 4.1 pasa a 4.2, y así hasta la 4.7). Antes: se amplió 4.7 Endurecimiento OWASP con los términos del recorrido del Top 10 (Fase 2, WBS 4.5.6); antes, con los de cadena de suministro (WBS 4.5.5); antes, con los de caducidad de sesión (WBS 4.5.4); antes, con los de MFA/TOTP (WBS 4.3); antes, con los de recuperación de contraseña (WBS 4.2) y fuerza bruta (WBS 4.1). Las secciones 4.1 – 4.6 corresponden a los temas 0.1 a 0.6 de la Fase 0.*

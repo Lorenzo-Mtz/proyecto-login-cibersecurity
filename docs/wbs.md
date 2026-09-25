@@ -2,6 +2,7 @@
 
 **Proyecto:** Sistema de Login Seguro — Proyecto de Aprendizaje en Ciberseguridad
 **Enfoque:** Rolling Wave Planning — todas las fases desglosadas a nivel de paquete de trabajo (*work package*).
+**v1.6** — se agrega la tarea **7.4**, commit final y etiqueta, que faltaba: todas las fases anteriores cerraban con su commit y su etiqueta y el cierre del proyecto no la tenía. **No va al Registro de Cambios del Charter**: no altera alcance, entregables ni criterios de aceptación — corrige una omisión de la propia estructura
 **v1.5** — se agrega la Fase 4, remediación acotada (ver Charter, Sección 10 — Registro de Cambios, cambio #6). El cierre del proyecto pasa de 6.0 a **7.0**
 **v1.4** — desglose de la Fase 3 (ver Charter, Sección 10 — Registro de Cambios, cambio #5)
 **v1.3** — se agrega la tarea 4.6.4, suite de pruebas automatizadas (ver Charter, Sección 10 — Registro de Cambios, cambio #3)
@@ -237,8 +238,12 @@
 ## 7.0 Cierre del Proyecto
 
 - 7.1 Lessons Learned Log final — **incluye la entrada pendiente del cierre de Fase 0 (tarea 2.7.3)**
+  - *Entregado:* `docs/lessons-learned.md`, 31 entradas. La pendiente es **LL31**
 - 7.2 Glosario bilingüe finalizado — **incluye los términos pendientes del tema 0.1, HTTP/HTTPS**
+  - *Entregado:* `docs/glossary.md`, 134 términos. El tema 0.1 es la nueva **sección 4.1**; las secciones 4.1 – 4.6 quedan alineadas con los temas 0.1 – 0.6 de la Fase 0
 - 7.3 Retrospectiva general del proyecto
+  - *Entregado:* `docs/retrospectiva.md` — objetivos del Charter contra lo entregado, números del proyecto, qué funcionó y qué no, y lo que queda abierto
+- 7.4 Commit final del proyecto y etiqueta `v1.0` (hito **M6**)
 
 ---
 

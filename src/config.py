@@ -39,7 +39,7 @@ class Config:
     # accesible desde JavaScript), pero SECURE y SAMESITE no vienen
     # configurados de forma segura por default: te toca definirlos aqui.
     #
-    # Pistas (glosario, seccion 4.3):
+    # Pistas (glosario, seccion 4.4 -- era la 4.3 antes de la renumeracion de 7.2):
     #   - SESSION_COOKIE_SECURE:   ¿debe viajar la cookie solo por HTTPS?
     #   - SESSION_COOKIE_SAMESITE: "Lax", "Strict" o "None" -- ¿cual mitiga
     #     mejor CSRF sin romper la navegacion normal del login?

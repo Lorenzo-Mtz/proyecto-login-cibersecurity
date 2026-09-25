@@ -85,12 +85,12 @@ El aprendizaje se documentó directamente en `docs/glossary.md`, sección 4, en 
 
 | Tema | Resultado |
 |---|---|
-| 0.1 HTTP / HTTPS | ⚠️ Sin términos en el glosario ni notas en esta plantilla |
-| 0.2 Criptografía y Hashing | Glosario 4.1: hash vs cifrado, salt, work factor, bcrypt, rainbow tables, fuerza bruta |
-| 0.3 AuthN / AuthZ | Glosario 4.2: autenticación vs autorización, RBAC, IDOR, username enumeration, mínimo privilegio |
-| 0.4 Gestión de Sesiones | Glosario 4.3: cookies y tokens de sesión, hijacking, fixation, flags `HttpOnly`/`Secure`/`SameSite`, expiración, invalidación |
-| 0.5 OTP / TOTP | Glosario 4.4: OTP, HOTP, TOTP (RFC 6238), MFA, secreto compartido, QR de aprovisionamiento |
-| 0.6 OWASP | Glosario 4.5: Top 10, ASVS y sus niveles L1/L2/L3, inyección, broken access control, fallas criptográficas |
+| 0.1 HTTP / HTTPS | **Glosario 4.1** (agregado en el cierre del proyecto, WBS 7.2): HTTP y HTTPS, TLS, sin estado, métodos y códigos de estado, cabeceras, *query string* frente a cuerpo, origen, contexto seguro, intermediario, HSTS, certificados y CA |
+| 0.2 Criptografía y Hashing | Glosario 4.2: hash vs cifrado, salt, work factor, bcrypt, rainbow tables, fuerza bruta |
+| 0.3 AuthN / AuthZ | Glosario 4.3: autenticación vs autorización, RBAC, IDOR, username enumeration, mínimo privilegio |
+| 0.4 Gestión de Sesiones | Glosario 4.4: cookies y tokens de sesión, hijacking, fixation, flags `HttpOnly`/`Secure`/`SameSite`, expiración, invalidación |
+| 0.5 OTP / TOTP | Glosario 4.5: OTP, HOTP, TOTP (RFC 6238), MFA, secreto compartido, QR de aprovisionamiento |
+| 0.6 OWASP | Glosario 4.6: Top 10, ASVS y sus niveles L1/L2/L3, inyección, broken access control, fallas criptográficas |
 
 ### Laboratorios prácticos (`docs/fase0-lab-hashing/`)
 - **`md5_lab.py`** — MD5 implementado desde cero (padding little-endian, funciones F/G/H/I, tabla K derivada de `sin`), verificado contra `hashlib.md5`.
@@ -99,7 +99,10 @@ El aprendizaje se documentó directamente en `docs/glossary.md`, sección 4, en 
 
 **Aprendizaje clave:** MD5 y SHA-256 son rápidos por diseño, y eso es justo lo que los hace inadecuados para contraseñas. Por eso el proyecto usa bcrypt, que es lento a propósito y trae el salt incorporado.
 
-### Pendientes de cierre de Fase 0 (WBS 2.7)
-- [ ] Tema 0.1 HTTP/HTTPS: notas y términos al glosario.
-- [ ] 2.7.3 Entrada de Lessons Learned de Fase 0.
-- [ ] Quitar la línea duplicada de "Última actualización" al final del glosario.
+### Pendientes de cierre de Fase 0 (WBS 2.7) — **cerrados**
+
+Los tres quedaron abiertos al cerrar la Fase 0 en agosto de 2026 y se saldaron en el cierre del proyecto, más de un mes después. Que tardaran tanto es en sí mismo la lección de **LL31**.
+
+- [x] ~~Tema 0.1 HTTP/HTTPS: notas y términos al glosario.~~ Resuelto en **WBS 7.2**: sección 4.1 del glosario, con 14 términos. El aprendizaje se documentó ahí y no en esta plantilla, igual que en los otros cinco temas.
+- [x] ~~2.7.3 Entrada de Lessons Learned de Fase 0.~~ Resuelta en **WBS 7.1**: entrada **LL31**.
+- [x] ~~Quitar la línea duplicada de "Última actualización" al final del glosario.~~ Ya estaba resuelto cuando se revisó; esta lista llevaba tiempo diciendo lo contrario.
