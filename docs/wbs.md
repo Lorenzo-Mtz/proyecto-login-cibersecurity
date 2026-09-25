@@ -1,7 +1,8 @@
 # Estructura de Desglose del Trabajo / Work Breakdown Structure (WBS)
 
 **Proyecto:** Sistema de Login Seguro — Proyecto de Aprendizaje en Ciberseguridad
-**Enfoque:** Rolling Wave Planning — Fases 0, 1 y 2 desglosadas a nivel de paquete de trabajo (*work package*); Fase 3 a nivel de entregable, pendiente de desglose detallado.
+**Enfoque:** Rolling Wave Planning — Fases 0, 1, 2 y 3 desglosadas a nivel de paquete de trabajo (*work package*). Dentro de la Fase 3, el detalle de 5.3.5 queda pendiente hasta que 5.3.1 y 5.3.2 den el número real de requisitos aplicables.
+**v1.4** — desglose de la Fase 3 (ver Charter, Sección 10 — Registro de Cambios, cambio #5)
 **v1.3** — se agrega la tarea 4.6.4, suite de pruebas automatizadas (ver Charter, Sección 10 — Registro de Cambios, cambio #3)
 **v1.2** — desglose de la Fase 2 (ver Charter, Sección 10 — Registro de Cambios, cambio #2)
 **v1.1** — actualizado para incorporar la Fase 0 (ver Charter, Sección 10 — Registro de Cambios, cambio #1)
@@ -137,20 +138,52 @@
 
 ---
 
-## 5.0 Fase 3 — Stretch Goal: ASVS Level 1 *(alto nivel)*
+## 5.0 Fase 3 — Stretch Goal: ASVS Level 1 *(detallado)*
 
-- 5.1 Autoevaluación contra checklist OWASP ASVS Level 1
-- 5.2 Threat model básico del sistema
-- 5.3 Documentación de resultados y gaps identificados
+> **Esta fase documenta, no corrige.** El criterio de aceptación del Scope Statement
+> (Sección 3) pide un checklist con estatus *pass/fail* por cada control aplicable: un
+> `fail` documentado con su evidencia **cumple**. Implementar las correcciones es trabajo
+> de otra fase, y se propone como tal en 5.4.3. Es la respuesta directa a R1 (scope creep).
+
+**5.1 Apertura de la fase**
+- 5.1.1 Desglose de la sección 5.0 a nivel de paquete de trabajo (WBS v1.4)
+- 5.1.2 Registro en el Charter de la versión de ASVS y del orden de ejecución (Sección 10, cambio #5)
+- 5.1.3 Revisión del Risk Register al abrir la fase
+
+**5.2 Threat model básico** *(va antes que la autoevaluación)*
+- 5.2.1 Inventario de activos: qué se protege y de quién
+- 5.2.2 Diagrama de flujo de datos con fronteras de confianza (navegador, Flask, SQLite, consola del mailer)
+- 5.2.3 Identificación de amenazas por elemento del diagrama, con STRIDE
+- 5.2.4 Mapeo de cada amenaza a los controles ya implementados y a los riesgos del registro (R4, R9 – R14)
+- 5.2.5 Amenazas sin control identificado: alta en el Risk Register
+- 5.2.6 Documento `docs/fase3-threat-model.md`
+
+**5.3 Autoevaluación contra ASVS Level 1**
+- 5.3.1 Obtener el CSV oficial de ASVS 5.0.0 y filtrar los requisitos de nivel 1
+- 5.3.2 Triaje por capítulo: *aplica* / *no aplica a esta arquitectura* / *fuera del alcance del proyecto*, cada uno con su argumento
+- 5.3.3 **Punto de decisión:** dimensionar el trabajo restante con el número real y acordar el nivel de detalle de 5.3.5
+- 5.3.4 Tabla de controles implementados con su evidencia (archivo, o la prueba que lo sostiene), para no repetir la evidencia requisito por requisito
+- 5.3.5 Recorrido de los capítulos que aplican, por bloques, con estatus por requisito *(se detalla tras 5.3.3)*
+- 5.3.6 Documento `docs/fase3-asvs-l1.md`
+
+**5.4 Consolidación de resultados**
+- 5.4.1 Lista priorizada de gaps: los del threat model, los del ASVS y los cinco de 4.5.6
+- 5.4.2 Alta en el Risk Register de los gaps que lo ameriten
+- 5.4.3 Propuesta de alcance para una fase de remediación, o para el cierre del proyecto
+
+**5.5 Cierre de Fase 3**
+- 5.5.1 Entrada en Lessons Learned Log (parcial)
+- 5.5.2 Revisión del Risk Register
+- 5.5.3 Commit final de Fase 3 y etiqueta `fase-3`
 
 ---
 
 ## 6.0 Cierre del Proyecto
 
-- 6.1 Lessons Learned Log final
-- 6.2 Glosario bilingüe finalizado
+- 6.1 Lessons Learned Log final — **incluye la entrada pendiente del cierre de Fase 0 (tarea 2.7.3)**
+- 6.2 Glosario bilingüe finalizado — **incluye los términos pendientes del tema 0.1, HTTP/HTTPS**
 - 6.3 Retrospectiva general del proyecto
 
 ---
 
-*Nota: Los paquetes de trabajo de la sección 5.0 se desglosarán con el mismo nivel de detalle que las secciones 2.0 a 4.0 cuando se cierre la Fase 2, siguiendo el enfoque de rolling wave planning.*
+*Nota (Septiembre 2026): la sección 5.0 quedó desglosada al cerrar la Fase 2, como estaba previsto. El rolling wave se aplica ahora **dentro** de la fase: 5.3.5 no se detalla hasta que 5.3.1 y 5.3.2 den el número real de requisitos de nivel 1 aplicables, porque planear ese recorrido sobre una estimación sería planear contra un número inventado.*
