@@ -490,15 +490,19 @@ La Fase 4 remedió los siete gaps de Nivel 1. Esta sección recalcula el resulta
 | V2.1.1 | G6 | La política del nombre de usuario existe y está escrita: `USERNAME_MIN_LENGTH`, `USERNAME_MAX_LENGTH` y `USERNAME_PATTERN` en `config.py`, aplicadas por `validar_username()` |
 | V2.2.1 | G6 | **Lista blanca**, no lista negra: se enumera lo permitido. 18 pruebas, incluida la que fija que los dos puntos se rechazan — el caso concreto de LL20 |
 | V3.2.1 | G1 | `X-Content-Type-Options: nosniff` más una CSP estricta. La aplicación no sirve archivos subidos ni respuestas de API, así que el escenario que el requisito persigue queda cubierto |
-| V3.3.1 | G2 | Cookie renombrada a `__Host-session`, con `Secure`, `Path=/` y sin `Domain`. **Con reserva: ver abajo** |
+| V3.3.1 | G2 | Cookie renombrada a `__Host-session`, con `Secure`, `Path=/` y sin `Domain`. **Verificado manualmente en navegador** el 25 de septiembre de 2026 |
 | V7.2.4 | G3 | `abrir_sesion()` incrementa `session_version` antes de escribir la cookie, en los dos caminos de autenticación. Verificado con la prueba de la cookie copiada y con su mutación |
 | V15.1.1 | G7 | Plazos de remediación basados en riesgo, incorporados al plan de respuesta de R6 |
 
-### La reserva de V3.3.1
+### La verificación manual de V3.3.1
 
-El control está implementado y su nombre es correcto, pero **no está verificado en un navegador**, y no puede estarlo con la suite: el test client de Werkzeug **no implementa las reglas de prefijo**, así que aceptaría una cookie `__Host-` que un navegador rechazaría. Sobre HTTP plano el comportamiento **varía entre navegadores**.
+Este control **no se puede verificar con la suite**: el test client de Werkzeug no implementa las reglas de prefijo, así que aceptaría una cookie `__Host-` que un navegador rechazaría. Y sobre HTTP plano el comportamiento **varía entre navegadores** — hay un issue abierto en el repositorio de RFC 6265bis sobre `localhost`.
 
-Si el navegador la rechaza, no se trata de un incumplimiento: **la aplicación no permitiría iniciar sesión en absoluto**. Queda como comprobación manual pendiente, del mismo tipo que la de 4.3.6 con la app autenticadora. Hasta hacerla, este `pass` es provisional.
+Si el navegador la hubiera rechazado, no habría sido un incumplimiento: **la aplicación no habría permitido iniciar sesión en absoluto**.
+
+**Comprobado el 25 de septiembre de 2026**, del mismo modo que 4.3.6 se comprobó con Google Authenticator: se levantó la aplicación en `http://127.0.0.1:5000` y se inició sesión con una cuenta sin MFA (`prueb2`). **El login funcionó**, así que el navegador aceptó la cookie con el prefijo. El `pass` deja de ser provisional.
+
+**Alcance de esta evidencia:** vale para el navegador usado. Como el comportamiento varía, un despliegue que deba soportar otros navegadores tendría que repetir la comprobación en cada uno — aunque sobre HTTPS, que es el caso para el que el prefijo se diseñó, la ambigüedad desaparece.
 
 ### Lo que la Fase 4 cerró y ASVS Level 1 no mide
 

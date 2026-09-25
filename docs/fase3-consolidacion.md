@@ -45,7 +45,7 @@ Todo este nivel cabe en una o dos sesiones de trabajo y cierra ocho incumplimien
 | # | Gap | Cierra | Costo |
 |---|---|---|---|
 | G1 | **Cabeceras de seguridad** en un `after_request`: `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | V3.2.1, **TM-34** (por `Referrer-Policy: no-referrer`), A02 | Bajo |
-| G2 | **Prefijo `__Host-` en la cookie** de sesión | V3.3.1 | **Una línea** |
+| G2 | **Prefijo `__Host-` en la cookie** de sesión ✅ *(Fase 4; verificado en navegador)* | V3.3.1 | **Una línea** |
 | G3 | **Incrementar `session_version` al autenticar** | V7.2.4, TM-02 | **Una línea** |
 | G4 | **Manejadores globales de 404 y 500** que no filtren y **que auditen** | TM-14, TM-11 parcial, A10 | Bajo |
 | G5 | **Rotación del log** con techo de tamaño | TM-28, R18 parcial, A09 | Bajo |

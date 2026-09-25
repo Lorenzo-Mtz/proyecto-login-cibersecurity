@@ -126,6 +126,10 @@ rompe las pruebas por una razón que no tiene nada que ver con el código.
   nombre y los atributos; la verificación real es **manual, en un navegador**.
   Es un tercer tipo de hueco, distinto de los dos de abajo: no es que el
   control sea difícil de medir, es que **el arnés no implementa la regla**.
+  **Comprobado a mano el 25 de septiembre de 2026** en `http://127.0.0.1:5000`
+  con una cuenta sin MFA: el login funcionó, el navegador aceptó la cookie. La
+  comprobación hay que rehacerla si cambia el nombre de la cookie o si importa
+  otro navegador.
 - **WBS 4.2**: falta cubrir el riesgo residual, cuando se atienda — que pedir
   enlaces en serie no deba poder mantener invalidado el de la víctima.
 - **WBS 4.5.4**: el camino con MFA no tiene prueba de caducidad **propia**.
