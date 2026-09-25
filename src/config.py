@@ -22,6 +22,18 @@ class Config:
 
     AUDIT_LOG = os.path.join(BASE_DIR, "instance", "audit.log")
 
+    # --- WBS 6.5 - Rotacion del registro (gap G5, amenaza TM-28) ---
+    # Un log que crece sin techo es una denegacion de servicio con retardo: al
+    # llenar el disco cae el sistema entero, no solo la auditoria. Es la unica
+    # de las tres carencias de R18 que se puede cerrar sin salir del proyecto
+    # -- la integridad (append-only) y el alerting necesitan infraestructura.
+    #
+    # Cinco respaldos de 1 MB son 6 MB de historia: sobra para un proyecto sin
+    # usuarios, y el numero esta aqui para que una prueba pueda bajarlo a bytes
+    # y ver la rotacion de verdad, como se hizo con los demas umbrales.
+    AUDIT_LOG_MAX_BYTES = 1024 * 1024
+    AUDIT_LOG_BACKUPS = 5
+
     # --- WBS 3.4.2 - Cookies HttpOnly / Secure / SameSite ---
     # Flask ya marca la cookie de sesion como HttpOnly por default (no es
     # accesible desde JavaScript), pero SECURE y SAMESITE no vienen
@@ -34,6 +46,25 @@ class Config:
     #
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Strict"
+
+    # --- WBS 6.2 - Prefijo de la cookie de sesion (gap G2, ASVS V3.3.1) ---
+    # El prefijo NO es decorativo: el navegador se niega a aceptar una cookie
+    # __Host- que no cumpla las tres condiciones a la vez -- atributo Secure,
+    # Path=/ y SIN atributo Domain. Eso la ata a este origen exacto, de modo
+    # que un subdominio no la puede SOBRESCRIBIR. Secure protege la lectura;
+    # el prefijo protege la escritura, que es un ataque distinto.
+    #
+    # Las tres condiciones ya se cumplian: Secure arriba, Path=/ por defecto en
+    # Flask, y SESSION_COOKIE_DOMAIN sin definir. Solo faltaba el nombre.
+    #
+    # OJO, y esta es la parte que ninguna prueba puede verificar: el test
+    # client de Werkzeug NO implementa las reglas de prefijo, asi que la suite
+    # se queda en verde aunque un navegador rechazara la cookie. Y sobre HTTP
+    # plano el comportamiento VARIA entre navegadores (hay un issue abierto en
+    # el repositorio de RFC 6265bis sobre localhost). Por eso este paquete
+    # exige comprobacion manual en el navegador, como la exigio 4.3.6 con la
+    # app autenticadora.
+    SESSION_COOKIE_NAME = "__Host-session"
 
     # --- WBS 4.5.4 - Expiracion por inactividad (R9) ---
     # El nombre lo pone Flask y despista: NO es la vida maxima de la sesion,
@@ -53,6 +84,20 @@ class Config:
     # En segundos y no timedelta, como los demas umbrales del proyecto, para
     # que la prueba pueda bajarlo a segundos y ver el vencimiento de verdad.
     SESSION_ABSOLUTE_LIFETIME_SECONDS = 12*60*60
+
+    # --- WBS 6.6 - Politica del nombre de usuario (gap G6, ASVS V2.1.1/V2.2.1) ---
+    # Hasta la Fase 3 el unico control era "que no este vacio", y eso costo un
+    # hallazgo concreto: alguien podia registrarse como `mfa:ana`, lo que
+    # descarto usar prefijos como espacio de nombres en el contador de intentos
+    # (LL20). La regla es una LISTA BLANCA y no una lista negra: se enumera lo
+    # que se permite, no lo que se prohibe, porque una lista negra siempre deja
+    # fuera el caracter que nadie penso.
+    #
+    # Los dos puntos quedan fuera a proposito, y eso vuelve seguro el prefijado
+    # que LL20 habia descartado (ver 6.11).
+    USERNAME_MIN_LENGTH = 3
+    USERNAME_MAX_LENGTH = 32
+    USERNAME_PATTERN = r"^[a-zA-Z0-9._-]+$"
 
     # --- WBS 4.1.1 - Politica anti fuerza bruta ---
     # En config y no en auth.py para que la prueba de 4.1.5 pueda bajar la

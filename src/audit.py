@@ -1,5 +1,6 @@
 import json
 import logging
+import logging.handlers
 import os
 from datetime import datetime, timezone
 
@@ -33,6 +34,12 @@ EVENTS = {
     # y la sesion llega vacia, sin user_id que anotar. Sin umbral en el texto:
     # si el tope cambia, el catalogo no miente.
     "session_expired": "Cookie rechazada por superar la vida maxima de la sesion",
+    # WBS 6.4. Un fallo no previsto es informacion para quien lo provoca (LL15)
+    # y hasta ahora no dejaba rastro: audit() solo se llamaba en los caminos
+    # que el codigo esperaba. La descripcion NO lleva detalle del error a
+    # proposito -- la firma de audit() no tiene por donde pasarlo, y esa es la
+    # garantia (4.4.3, R14).
+    "server_error": "Fallo no controlado durante una peticion",
 }
 
 MAX_FIELD_LENGTH = 64
@@ -51,7 +58,19 @@ def init_audit_log(app):
 
     # delay=True: el archivo se abre hasta el primer evento, no al arrancar
     # (con debug=True, Flask levanta dos procesos).
-    handler = logging.FileHandler(ruta, encoding="utf-8", delay=True)
+    #
+    # WBS 6.5 (gap G5): rotacion por tamano. Sin ella el archivo crece sin
+    # techo y llenar el disco es una denegacion de servicio (TM-28). Rota, no
+    # borra: se conservan AUDIT_LOG_BACKUPS archivos, asi que la historia
+    # reciente sobrevive. No cierra R18 -- el log sigue siendo escribible por
+    # quien alcance el disco -- pero cierra una de sus tres carencias.
+    handler = logging.handlers.RotatingFileHandler(
+        ruta,
+        maxBytes=app.config["AUDIT_LOG_MAX_BYTES"],
+        backupCount=app.config["AUDIT_LOG_BACKUPS"],
+        encoding="utf-8",
+        delay=True,
+    )
     # Sin prefijos de logging: la linea es exactamente el JSON (la fecha va dentro).
     handler.setFormatter(logging.Formatter("%(message)s"))
 

@@ -5,7 +5,12 @@
 **Fecha:** 25 de septiembre de 2026
 **Preparado por:** Lorenzo Mtz
 
-> **Estado:** completo — paquetes 5.3.1 a 5.3.5.
+> **Estado:** completo. **Re-evaluado tras la Fase 4** (WBS 6.8.1): seis requisitos
+> pasaron de `fail` a `pass`. El recorrido de la sección 6 conserva la evaluación
+> **original de la Fase 3** y cada requisito afectado lleva su nota de re-evaluación;
+> el resultado actualizado está en la sección 8. No se reescribe la evaluación
+> inicial: un documento de auditoría que se sobrescribe deja de poder mostrar qué
+> se corrigió.
 
 > **Esta fase documenta, no corrige** (Charter, cambio #5). Un requisito en `fail`
 > documentado con su evidencia **cumple** el criterio de aceptación del Scope Statement.
@@ -284,7 +289,7 @@ Los identificadores `Cnn` remiten a la tabla de controles de la sección 5.
 | V7.2.1 | Que la verificación del token de sesión la haga un servicio backend de confianza | **pass** | C09: la firma se valida **en el servidor** en cada petición (`open_session` de Flask); el cliente nunca decide si su cookie es válida |
 | V7.2.2 | Tokens autocontenidos o de referencia **generados dinámicamente**, no claves estáticas | **pass** | C09: la cookie se genera por sesión con su propio contenido y timestamp. No hay API keys ni secretos estáticos por usuario |
 | V7.2.3 | Que los tokens **de referencia**, si se usan, tengan 128 bits de un CSPRNG | **N/A** | Condicional no cumplida: la sesión usa un token **autocontenido** (cookie firmada), no de referencia. El requisito no llega a activarse |
-| V7.2.4 | Generar un token nuevo al autenticar, **incluida la reautenticación**, y **terminar el token actual** | **fail** | **Se cumple la primera mitad y no la segunda.** `login()` hace `session.clear()` y escribe una sesión nueva (C16), pero **no incrementa `session_version`**. Una cookie capturada antes de volver a autenticarse conserva la misma versión y una firma válida, así que **sigue sirviendo**. `session_version` solo sube en el logout y en el cambio de contraseña por recuperación |
+| V7.2.4 | Generar un token nuevo al autenticar, **incluida la reautenticación**, y **terminar el token actual** | **fail** → **pass** *(Fase 4, G3)* | **Se cumple la primera mitad y no la segunda.** `login()` hace `session.clear()` y escribe una sesión nueva (C16), pero **no incrementa `session_version`**. Una cookie capturada antes de volver a autenticarse conserva la misma versión y una firma válida, así que **sigue sirviendo**. `session_version` solo sube en el logout y en el cambio de contraseña por recuperación |
 | V7.4.1 | Que al terminar la sesión no se pueda seguir usándola; para tokens autocontenidos, una lista de revocados, rechazar los emitidos antes de cierta fecha por usuario, o rotar la clave por usuario | **pass** | C11: `session_version` es exactamente la variante por usuario que el requisito describe. Verificado con la prueba de la cookie copiada antes del logout (LL5). C13 y C14 cubren además la terminación por expiración |
 | V7.4.2 | Terminar todas las sesiones activas cuando una cuenta se deshabilita o se borra | **N/A** | Condicional no cumplida: **no existe funcionalidad** de deshabilitar ni borrar cuentas. Si una fila se borra directamente en la base, `@login_required` rechaza la sesión porque el `SELECT` no devuelve usuario (C17), pero eso es una consecuencia del guard, no una implementación de este requisito |
 
@@ -372,8 +377,8 @@ Conviene decir de dónde viene ese resultado: **el proyecto no eligió este dise
 
 | Req | Qué exige | Estatus | Evidencia / argumento |
 |---|---|---|---|
-| V2.1.1 | Que la documentación defina reglas de validación de entrada: cómo comprobar cada dato contra una estructura esperada | **fail** | Hay reglas documentadas para **dos** de los tres datos de entrada: la política de contraseñas (`docs/fase1-notas.md`) y el formato de email (C36, vía `email-validator`). **Del nombre de usuario no hay regla escrita porque no hay regla**: el único control es que no esté vacío |
-| V2.2.1 | Validar la entrada contra expectativas de negocio, con lista blanca de valores, patrones y rangos | **fail** | El `username` se acepta tal cual, sin lista blanca, sin patrón y sin longitud máxima. Es la raíz de **LL20**: se comprobó que alguien puede registrarse literalmente como `mfa:ana`, que fue lo que descartó usar prefijos como espacio de nombres en el contador de intentos. La contraseña y el email sí cumplen |
+| V2.1.1 | Que la documentación defina reglas de validación de entrada: cómo comprobar cada dato contra una estructura esperada | **fail** → **pass** *(Fase 4, G6)* | Hay reglas documentadas para **dos** de los tres datos de entrada: la política de contraseñas (`docs/fase1-notas.md`) y el formato de email (C36, vía `email-validator`). **Del nombre de usuario no hay regla escrita porque no hay regla**: el único control es que no esté vacío |
+| V2.2.1 | Validar la entrada contra expectativas de negocio, con lista blanca de valores, patrones y rangos | **fail** → **pass** *(Fase 4, G6)* | El `username` se acepta tal cual, sin lista blanca, sin patrón y sin longitud máxima. Es la raíz de **LL20**: se comprobó que alguien puede registrarse literalmente como `mfa:ana`, que fue lo que descartó usar prefijos como espacio de nombres en el contador de intentos. La contraseña y el email sí cumplen |
 | V2.2.2 | Que la validación se aplique en una capa de servicio de confianza, sin depender de la del cliente | **pass** | Toda la validación ocurre en el servidor. **No hay JavaScript**, así que no existe validación de cliente en la que apoyarse ni siquiera por accidente |
 | V2.3.1 | Procesar los flujos de negocio en el orden esperado, sin saltarse pasos | **pass** | El login en dos pasos lo impone la **sesión pendiente**: sin el paso 1 no hay `pending_mfa_user_id` y `/mfa` rechaza; sin el paso 2 no hay `user_id` y `@login_required` rechaza (C19, C20). Verificado sobre HTTP real en 4.6.1. El flujo de recuperación exige un token válido y no reutilizable (C30) |
 
@@ -381,9 +386,9 @@ Conviene decir de dónde viene ese resultado: **el proyecto no eligió este dise
 
 | Req | Qué exige | Estatus | Evidencia / argumento |
 |---|---|---|---|
-| V3.2.1 | Controles que impidan al navegador interpretar una respuesta en el contexto equivocado (`Sec-Fetch-*`, `sandbox` de CSP, `Content-Disposition`) | **fail** | No se emite **ninguno** de los tres mecanismos, ni `X-Content-Type-Options: nosniff`. Es el gap A02 del recorrido del Top 10 |
+| V3.2.1 | Controles que impidan al navegador interpretar una respuesta en el contexto equivocado (`Sec-Fetch-*`, `sandbox` de CSP, `Content-Disposition`) | **fail** → **pass** *(Fase 4, G1)* | No se emite **ninguno** de los tres mecanismos, ni `X-Content-Type-Options: nosniff`. Es el gap A02 del recorrido del Top 10 |
 | V3.2.2 | Que el contenido destinado a mostrarse como texto use funciones de render seguras (`textContent`, `createTextNode`) | **N/A** | Condicional no cumplida: no hay render del lado del cliente. El equivalente en servidor es el autoescape de V1.2.1 |
-| V3.3.1 | Cookies con atributo `Secure` **y**, si no se usa el prefijo `__Host-`, el prefijo `__Secure-` en el nombre | **fail** | **Se cumple la mitad.** C10 pone `Secure`, pero la cookie se llama `session`, sin prefijo. El prefijo es lo que impide que un subdominio —o un atacante en HTTP plano— sobrescriba la cookie: sin él, `Secure` protege la lectura pero no la **escritura** |
+| V3.3.1 | Cookies con atributo `Secure` **y**, si no se usa el prefijo `__Host-`, el prefijo `__Secure-` en el nombre | **fail** → **pass, con reserva** *(Fase 4, G2)* | **Se cumple la mitad.** C10 pone `Secure`, pero la cookie se llama `session`, sin prefijo. El prefijo es lo que impide que un subdominio —o un atacante en HTTP plano— sobrescriba la cookie: sin él, `Secure` protege la lectura pero no la **escritura** |
 | V3.4.1 | Cabecera `Strict-Transport-Security` en todas las respuestas, con `max-age` de al menos un año | **fail** | No se emite. Es el gap A02, y sin TLS tampoco tendría efecto: pertenece a la Raíz 1 del threat model |
 | V3.4.2 | Que `Access-Control-Allow-Origin` sea un valor fijo o se valide contra una lista blanca | **N/A** | Condicional no cumplida: la aplicación **no configura CORS** y no emite esa cabecera, así que rige la política de mismo origen del navegador sin modificaciones. La ausencia es el estado seguro |
 | V3.5.1 | Que, si **no** se depende del preflight de CORS, las peticiones a funcionalidad sensible se validen como originadas en la propia aplicación (tokens anti-falsificación o cabeceras no incluidas en la lista segura de CORS) | **pass** | Es exactamente el caso: no se depende del preflight, y C38 aplica **tokens CSRF en todos los POST** mediante `CSRFProtect` global, con 12 pruebas propias. `SameSite=Strict` (C10) refuerza |
@@ -419,7 +424,7 @@ Los tres requisitos descartados en el triaje no se repiten aquí: `V4.4.1` (WebS
 |---|---|---|---|
 | V4.1.1 | Que toda respuesta con cuerpo lleve `Content-Type` acorde al contenido, **con el parámetro `charset`** | **pass** | Verificado sobre el servidor real, no supuesto: `/login`, `/register` y `/forgot-password` devuelven `text/html; charset=utf-8`, y también lo llevan el **302** de una redirección y el **404** de una ruta inexistente. Es el comportamiento por defecto de Flask, pero se comprobó en la respuesta HTTP |
 | V11.4.1 | Que solo se usen funciones hash aprobadas para usos criptográficos —firmas, HMAC, KDF, generación de bits aleatorios— y que **las prohibidas, como MD5, no se usen para ningún propósito criptográfico** | **pass** | Inventario completo de funciones hash en la aplicación: **SHA-256** para el hash del token de recuperación (C29); **bcrypt** para contraseñas (C01); **HMAC-SHA-1** en dos sitios que no elige el proyecto — la firma de la cookie de Flask (`digest_method = sha1`, `key_derivation = "hmac"`) y el TOTP, cuyo algoritmo por defecto fija el RFC 6238. **SHA-1 sigue siendo aceptable dentro de HMAC**: sus debilidades son de colisión y no afectan a la construcción HMAC, que es por lo que NIST lo mantiene permitido para HMAC, KDF y generación de bits aleatorios, y lo prohíbe solo para firma digital. Ninguno de los dos usos aquí es una firma digital. **MD5 aparece en el repositorio** —`docs/fase0-lab-hashing/md5_lab.py`, implementado desde cero como ejercicio de Fase 0— pero **no se importa ni se usa en `src/`**: no tiene ningún propósito criptográfico en la aplicación |
-| V15.1.1 | Que la documentación defina **plazos de remediación basados en riesgo** para componentes de terceros con vulnerabilidades, y para actualizar librerías en general | **fail** | R6 define **cuándo mirar** —`pip-audit` antes del cierre de cada fase— pero no **en cuánto tiempo arreglar**. No hay nada que diga, por ejemplo, "una vulnerabilidad crítica se atiende en 7 días". Es una cadencia de revisión, no un plazo de remediación, y el requisito pide lo segundo |
+| V15.1.1 | Que la documentación defina **plazos de remediación basados en riesgo** para componentes de terceros con vulnerabilidades, y para actualizar librerías en general | **fail** → **pass** *(Fase 4, G7)* | R6 define **cuándo mirar** —`pip-audit` antes del cierre de cada fase— pero no **en cuánto tiempo arreglar**. No hay nada que diga, por ejemplo, "una vulnerabilidad crítica se atiende en 7 días". Es una cadencia de revisión, no un plazo de remediación, y el requisito pide lo segundo |
 | V15.2.1 | Que la aplicación solo contenga componentes que **no hayan incumplido** esos plazos | **pass** | C46: `pip-audit` 2.10.1 sobre los 22 paquetes del entorno más `pip`, **0 vulnerabilidades conocidas**, con URL y hash del estándar registrados para reproducir. Pasa **sobre los hechos**: con cero componentes vulnerables, ninguno puede haber incumplido plazo alguno. La carencia está en V15.1.1, no aquí |
 | V15.3.1 | Que la aplicación devuelva solo el subconjunto de campos necesario de un objeto de datos, y no el objeto entero | **pass** | C18: el `SELECT` de `@login_required` lista **columnas explícitas y no `*`**, con el motivo escrito en el código — con un asterisco, `totp_secret` quedaría en `g.user` en cada petición protegida, al alcance de cualquier plantilla futura. Es exactamente el escenario que este requisito describe, y la decisión se tomó por razonamiento propio en 4.3, antes de conocer el requisito |
 
@@ -471,6 +476,62 @@ El proyecto cumple **V9 entero** (tokens autocontenidos) y la mayor parte de V6,
 ### Y lo que no cubre
 
 **Nivel 1 no pregunta por el registro de auditoría.** V16 no aporta ni un requisito a este nivel, así que **R18 —el hallazgo de que el log no sostiene no repudio— no aparece en ninguna parte de estos 70**. Un proyecto que solo hiciera esta autoevaluación no tendría forma de encontrarlo. Es el argumento más claro a favor de haber hecho los dos ejercicios, y en ese orden.
+
+---
+
+## 8. Re-evaluación tras la Fase 4 (WBS 6.8.1)
+
+La Fase 4 remedió los siete gaps de Nivel 1. Esta sección recalcula el resultado **sin reescribir** la evaluación original: el recorrido de la sección 6 sigue mostrando lo que se encontró en la Fase 3, con una marca `fail → pass` en los requisitos que cambiaron. Un documento de auditoría que se sobrescribe deja de poder demostrar qué se corrigió.
+
+### Requisitos que cambiaron de estatus
+
+| Req | Gap | Qué lo cierra |
+|---|---|---|
+| V2.1.1 | G6 | La política del nombre de usuario existe y está escrita: `USERNAME_MIN_LENGTH`, `USERNAME_MAX_LENGTH` y `USERNAME_PATTERN` en `config.py`, aplicadas por `validar_username()` |
+| V2.2.1 | G6 | **Lista blanca**, no lista negra: se enumera lo permitido. 18 pruebas, incluida la que fija que los dos puntos se rechazan — el caso concreto de LL20 |
+| V3.2.1 | G1 | `X-Content-Type-Options: nosniff` más una CSP estricta. La aplicación no sirve archivos subidos ni respuestas de API, así que el escenario que el requisito persigue queda cubierto |
+| V3.3.1 | G2 | Cookie renombrada a `__Host-session`, con `Secure`, `Path=/` y sin `Domain`. **Con reserva: ver abajo** |
+| V7.2.4 | G3 | `abrir_sesion()` incrementa `session_version` antes de escribir la cookie, en los dos caminos de autenticación. Verificado con la prueba de la cookie copiada y con su mutación |
+| V15.1.1 | G7 | Plazos de remediación basados en riesgo, incorporados al plan de respuesta de R6 |
+
+### La reserva de V3.3.1
+
+El control está implementado y su nombre es correcto, pero **no está verificado en un navegador**, y no puede estarlo con la suite: el test client de Werkzeug **no implementa las reglas de prefijo**, así que aceptaría una cookie `__Host-` que un navegador rechazaría. Sobre HTTP plano el comportamiento **varía entre navegadores**.
+
+Si el navegador la rechaza, no se trata de un incumplimiento: **la aplicación no permitiría iniciar sesión en absoluto**. Queda como comprobación manual pendiente, del mismo tipo que la de 4.3.6 con la app autenticadora. Hasta hacerla, este `pass` es provisional.
+
+### Lo que la Fase 4 cerró y ASVS Level 1 no mide
+
+Dos de los siete gaps **no cambian ningún requisito de nivel 1**:
+
+- **G4** (manejadores globales de error) cierra la amenaza TM-14 y el gap A10 del Top 10.
+- **G5** (rotación del registro) cierra TM-28.
+
+Los dos pertenecen a **V16 Security Logging and Error Handling**, que no aporta **ni un requisito de nivel 1**. Es la misma asimetría que se documentó al bajar el estándar, ahora vista desde el otro lado: se puede mejorar la postura de seguridad de forma medible sin que el checklist se mueva un punto. Un proyecto que solo persiguiera el número no habría hecho ninguno de los dos.
+
+### Resultado actualizado
+
+| Estatus | Fase 3 | **Tras la Fase 4** |
+|---|---|---|
+| `pass` | 32 | **38** |
+| `fail` | 12 | **6** |
+| N/A por condicional no cumplida | 10 | 10 |
+| No aplican a esta arquitectura | 12 | 12 |
+| Fuera del alcance del proyecto | 4 | 4 |
+| **Total** | **70** | **70** |
+
+Sobre los 44 requisitos con veredicto: **38 de 44, el 86 %** — frente al 73 % de la Fase 3.
+
+### Los seis `fail` que quedan
+
+| Problema | Requisitos | Gap | Nivel |
+|---|---|---|---|
+| No hay cambio de contraseña autenticado | V6.2.2, V6.2.3 | G8 | 2 |
+| Nada frena el *credential stuffing* | V6.2.4, V6.3.1 | G9 | 2 |
+| El token de recuperación viaja en la URL | V14.2.1 | G10 | 2 |
+| Sin HSTS | V3.4.1 | G14 | 3 |
+
+Cinco de los seis son de **Nivel 2** y estaban fuera del alcance de esta fase por decisión registrada (Charter, cambio #6). El sexto, V3.4.1, **no se puede cerrar sin TLS**: emitir `Strict-Transport-Security` sobre HTTP plano es inútil y potencialmente destructivo, así que entra con G14.
 
 ---
 

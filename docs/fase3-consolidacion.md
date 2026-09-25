@@ -44,13 +44,15 @@ Todo este nivel cabe en una o dos sesiones de trabajo y cierra ocho incumplimien
 
 | # | Gap | Cierra | Costo |
 |---|---|---|---|
-| G1 | **Cabeceras de seguridad** en un `after_request`: `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | V3.2.1, V3.4.1 (parcial sin TLS), TM-34 parcial, A02 | Bajo |
+| G1 | **Cabeceras de seguridad** en un `after_request`: `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | V3.2.1, **TM-34** (por `Referrer-Policy: no-referrer`), A02 | Bajo |
 | G2 | **Prefijo `__Host-` en la cookie** de sesión | V3.3.1 | **Una línea** |
 | G3 | **Incrementar `session_version` al autenticar** | V7.2.4, TM-02 | **Una línea** |
 | G4 | **Manejadores globales de 404 y 500** que no filtren y **que auditen** | TM-14, TM-11 parcial, A10 | Bajo |
 | G5 | **Rotación del log** con techo de tamaño | TM-28, R18 parcial, A09 | Bajo |
 | G6 | **Validación del nombre de usuario**: lista blanca de caracteres y longitud máxima | V2.1.1, V2.2.1, LL20, A05 | Bajo |
 | G7 | **Documentar plazos de remediación** de dependencias basados en riesgo | V15.1.1 | **Un párrafo** |
+
+**Corrección (25 de septiembre de 2026, durante 6.1):** la versión inicial de esta fila decía que G1 cerraba *"V3.4.1 (parcial sin TLS)"*. Era incorrecto: **no se debe emitir `Strict-Transport-Security` sobre HTTP plano** —los navegadores lo ignoran, y si llegara a tomar efecto sin TLS dejaría la aplicación inalcanzable—, así que HSTS entra con G14 y **V3.4.1 sigue en `fail` después de G1**. A cambio, `Referrer-Policy: no-referrer` cierra TM-34 del todo y no parcialmente, mientras el token siga en la URL.
 
 G2 y G3 son de una línea cada uno y cierran, entre los dos, un incumplimiento de nivel 1 y un hallazgo nuevo. **G3 es el de mejor relación valor/costo de toda la lista**: el mecanismo (`session_version`) existe desde la Fase 1, y solo falta invocarlo en un momento más.
 

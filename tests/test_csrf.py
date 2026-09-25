@@ -102,12 +102,20 @@ def test_logout_sin_token_no_cierra_la_sesion(client, db, usuario):
         "csrf_token": token_csrf(client),
     })
 
+    def version():
+        return db.execute(
+            "SELECT session_version FROM users WHERE id = ?", (usuario,)
+        ).fetchone()[0]
+
+    # Se mide DESPUES del login: desde 6.3 autenticarse incrementa la version
+    # (gap G3), asi que comparar contra 0 dejaria de decir si el logout sin
+    # token hizo algo.
+    tras_login = version()
+
     client.post("/logout")  # sin token
 
     assert client.get("/dashboard").status_code == 200, "la sesion se cerro sin token"
-    assert db.execute(
-        "SELECT session_version FROM users WHERE id = ?", (usuario,)
-    ).fetchone()[0] == 0
+    assert version() == tras_login, "un logout sin token no debe invalidar nada"
 
 
 def test_logout_no_acepta_get(client, usuario):

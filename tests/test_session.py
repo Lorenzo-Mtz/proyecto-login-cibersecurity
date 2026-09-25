@@ -82,11 +82,18 @@ def test_la_cookie_copiada_antes_del_logout_deja_de_servir(client, db, usuario):
 
 
 def test_el_logout_incrementa_la_version_en_el_servidor(client, db, usuario):
-    antes = version_en_bd(db, usuario)
+    """Se mide DESPUES del login, no antes.
+
+    Desde 6.3 el login tambien incrementa la version (gap G3), asi que medir
+    desde antes del login haria que esta prueba contara dos incrementos y
+    dejara de decir si el logout hace el suyo.
+    """
     client.post("/login", data={"username": USERNAME, "password": PASSWORD})
+    tras_login = version_en_bd(db, usuario)
+
     client.post("/logout")
 
-    assert version_en_bd(db, usuario) == antes + 1
+    assert version_en_bd(db, usuario) == tras_login + 1
 
 
 def test_una_cookie_vieja_no_puede_cerrar_una_sesion_nueva(client, db, usuario):
@@ -130,3 +137,51 @@ def test_un_login_nuevo_limpia_la_sesion_anterior(client, usuario):
     with client.session_transaction() as sesion:
         assert "basura_previa" not in sesion
         assert sesion["user_id"] == usuario
+
+
+def test_volver_a_autenticarse_invalida_la_sesion_anterior(client, db, usuario):
+    """WBS 6.3 (gap G3) / V7.2.4: la via de R9 que quedaba abierta.
+
+    El escenario: alguien copia la cookie, el usuario vuelve a iniciar sesion
+    --incluso por sospechar que se la robaron-- y hasta 6.3 la cookie copiada
+    seguia funcionando, porque login() no tocaba session_version.
+    """
+    client.post("/login", data={"username": USERNAME, "password": PASSWORD})
+    with client.session_transaction() as sesion:
+        cookie_robada = dict(sesion)
+
+    otro = client.application.test_client()
+    otro.post("/login", data={"username": USERNAME, "password": PASSWORD})
+
+    with client.session_transaction() as sesion:
+        sesion.update(cookie_robada)
+
+    assert client.get("/dashboard").headers["Location"].endswith("/login"), \
+        "la cookie anterior sigue sirviendo despues de reautenticarse"
+    assert otro.get("/dashboard").status_code == 200, "la sesion nueva debe seguir viva"
+
+
+def test_el_login_incrementa_la_version_en_el_servidor(client, db, usuario):
+    antes = version_en_bd(db, usuario)
+    client.post("/login", data={"username": USERNAME, "password": PASSWORD})
+    assert version_en_bd(db, usuario) == antes + 1
+
+
+def test_la_cookie_de_sesion_lleva_el_prefijo_host(app, client, usuario):
+    """WBS 6.2 (gap G2) / V3.3.1.
+
+    ADVERTENCIA: esta prueba comprueba el NOMBRE, y eso es todo lo que el test
+    client puede comprobar. Werkzeug no implementa las reglas de prefijo, asi
+    que aceptaria una cookie __Host- emitida sin Secure -- que es justo lo que
+    un navegador rechazaria. La verificacion real de este control es manual,
+    en un navegador, como lo fue la de 4.3.6 con la app autenticadora.
+    """
+    assert app.config["SESSION_COOKIE_NAME"] == "__Host-session"
+
+    r = client.post("/login", data={"username": USERNAME, "password": PASSWORD})
+    set_cookie = r.headers.get("Set-Cookie", "")
+    assert set_cookie.startswith("__Host-session="), set_cookie
+
+    # Las tres condiciones que el prefijo exige y que el navegador SI verifica.
+    assert "Path=/" in set_cookie
+    assert "Domain=" not in set_cookie

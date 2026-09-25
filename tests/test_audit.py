@@ -14,6 +14,7 @@ Que se prueba y por que cada cosa:
   - Las rutas emiten el evento correcto en cada camino.
 """
 import json
+import os
 
 import pytest
 
@@ -149,3 +150,51 @@ def test_csrf_failure_se_registra(make_app, eventos):
         registrados = [json.loads(l)["event"] for l in f if l.strip()]
 
     assert "csrf_failure" in registrados
+
+
+def test_el_log_rota_al_superar_el_techo(make_app, monkeypatch):
+    """WBS 6.5 (gap G5) / amenaza TM-28.
+
+    El techo se baja a bytes desde la config, como se hizo con los demas
+    umbrales. Se parchea en Config y no en app.config porque init_audit_log()
+    construye el handler DENTRO de create_app(): un override posterior llegaria
+    tarde.
+
+    COMPROMISO QUE ESTA PRUEBA DEJA POR ESCRITO: rotar acota el disco a costa de
+    DESCARTAR lo mas viejo. Con estos umbrales, de 40 eventos sobreviven ~10.
+    Eso significa que quien pueda generar ruido puede empujar evidencia fuera
+    del registro -- una forma mas barata de lo que TM-26 hace borrando el
+    archivo. La rotacion cierra TM-28 (llenar el disco) y no cierra R18: para
+    eso hace falta enviar el log fuera del alcance de escritura de la
+    aplicacion, que es G16 y necesita infraestructura. Por eso lo que se afirma
+    aqui es que sobrevive lo RECIENTE, no que no se pierda nada.
+    """
+    from src import config
+    from src.audit import audit_logger
+
+    monkeypatch.setattr(config.Config, "AUDIT_LOG_MAX_BYTES", 400)
+    monkeypatch.setattr(config.Config, "AUDIT_LOG_BACKUPS", 3)
+    app = make_app()
+    ruta = app.config["AUDIT_LOG"]
+
+    with app.test_request_context("/"):
+        for _ in range(39):
+            audit("login_failure", username="alguien")
+        audit("login_failure", username="el-ultimo")
+    for h in audit_logger.handlers:
+        h.flush()
+
+    assert os.path.exists(ruta + ".1"), "el log no roto al superar el techo"
+    assert os.path.getsize(ruta) <= 400 * 2, "el archivo vivo crecio sin limite"
+
+    # No se conservan mas respaldos de los configurados: ese es el techo.
+    assert not os.path.exists(ruta + ".4"), "se guardaron mas respaldos de los pedidos"
+
+    # Lo que la rotacion SI garantiza es que sobrevive lo mas RECIENTE. Se
+    # comprueba con el ultimo evento escrito, que es el que un investigador
+    # buscaria primero.
+    with open(ruta, encoding="utf-8") as f:
+        vivas = [json.loads(l) for l in f if l.strip()]
+    assert vivas, "el archivo vivo quedo vacio tras rotar"
+    assert vivas[-1]["event"] == "login_failure"
+    assert vivas[-1]["username"] == "el-ultimo"

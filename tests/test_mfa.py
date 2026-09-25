@@ -246,7 +246,9 @@ def test_el_secreto_no_viaja_en_la_cookie_de_sesion(client, db, usuario):
     with client.session_transaction() as sesion:
         assert all(secret not in str(v) for v in sesion.values())
 
-    galleta = client.get_cookie("session")
+    # El nombre se lee de la config y no se escribe a mano: desde 6.2 lleva el
+    # prefijo __Host- (gap G2), y una prueba que lo fije se romperia otra vez.
+    galleta = client.get_cookie(client.application.config["SESSION_COOKIE_NAME"])
     assert galleta is not None
     assert secret not in galleta.decoded_value
 

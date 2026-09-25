@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Error {{ codigo }}{% endblock %}
+{% block content %}
+  <h1>Error {{ codigo }}</h1>
+  {# Mensaje generico a proposito (WBS 6.4): el detalle de un fallo es
+     informacion para quien lo provoca (LL15). Diagnosticar se hace en el
+     stderr del servidor, no en la respuesta. #}
+  <p>{{ mensaje }}</p>
+  <p class="switch-link"><a href="{{ url_for('auth.login') }}">Volver al inicio</a></p>
+{% endblock %}

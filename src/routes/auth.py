@@ -5,6 +5,7 @@ from flask import (
     session, url_for,
 )
 from src.database import get_db
+import re
 import sqlite3
 import time
 from src.routes.decorators import login_required
@@ -19,6 +20,71 @@ SALT = 12
 DUMMY_HASH = bcrypt.hashpw("dummypassword".encode('utf-8'),bcrypt.gensalt(SALT))
 
 auth_bp = Blueprint("auth", __name__)
+
+def abrir_sesion(db, user):
+    """Crea la sesion de un usuario que ya demostro todos sus factores.
+
+    Incrementa session_version ANTES de escribir la cookie (WBS 6.3, gap G3).
+    Autenticarse invalida cualquier sesion anterior de la cuenta: sin esto, una
+    cookie copiada seguia sirviendo despues de que el usuario volviera a entrar
+    -- incluso si volvia a entrar precisamente por sospechar que se la habian
+    robado. Es V7.2.4 de ASVS, y era una via de R9 que nunca se habia cerrado:
+    el mecanismo existia desde la Fase 1 y solo faltaba invocarlo aqui.
+
+    EFECTO COLATERAL BUSCADO: cierra tambien las sesiones del usuario en otros
+    dispositivos. Con un contador por usuario no hay forma de invalidar solo
+    "la anterior de este navegador"; distinguirlas exigiria una tabla de
+    sesiones con una fila por cookie. Se acepta el efecto: para esta aplicacion
+    es el comportamiento mas seguro, y es facil de explicar a quien lo note.
+
+    Funcion compartida y no dos bloques paralelos: son el mismo hecho -- se
+    creo una sesion -- y duplicar el UPDATE en dos sitios es justo como se
+    pierden los arreglos (LL17).
+    """
+    db.execute(
+        "UPDATE users SET session_version = session_version + 1 WHERE id = ?",
+        (user["id"],),
+    )
+    db.commit()
+    version = db.execute(
+        "SELECT session_version FROM users WHERE id = ?", (user["id"],)
+    ).fetchone()["session_version"]
+
+    session.clear()
+    session.permanent = True
+    session["user_id"] = user["id"]
+    session["session_version"] = version
+    # Marca de nacimiento de la sesion, para el tope absoluto de 4.5.4. El
+    # cliente no la puede retrasar: la firma se lo impide, y sin esa garantia
+    # el tope no existiria.
+    session["login_at"] = int(time.time())
+
+
+def validar_username(username):
+    """Comprueba el nombre de usuario contra la politica (WBS 6.6, gap G6).
+
+    Devuelve True si es valido; si no, deja un flash y devuelve False. Misma
+    forma que validar_password() -- y con return explicito en TODOS los
+    caminos, incluido el bueno, que es donde LL11 mordio.
+
+    El mensaje enumera lo permitido en vez de senalar el caracter ofensor: es
+    mas util para quien escribe y no convierte el formulario en un oraculo de
+    la regla interna.
+    """
+    minimo = current_app.config["USERNAME_MIN_LENGTH"]
+    maximo = current_app.config["USERNAME_MAX_LENGTH"]
+
+    if not username:
+        flash("El usuario esta vacio")
+        return False
+    if len(username) < minimo or len(username) > maximo:
+        flash(f"El usuario debe tener entre {minimo} y {maximo} caracteres.")
+        return False
+    if not re.match(current_app.config["USERNAME_PATTERN"], username):
+        flash("El usuario solo admite letras, numeros, punto, guion y guion bajo.")
+        return False
+    return True
+
 
 def validar_password(password, confirm_password):
     if not (12 <= len(password) <= 64):
@@ -42,8 +108,7 @@ def register():
     if request.method == "POST":
 
         username = request.form.get("username", "").strip()
-        if not username:
-            flash("El usuario esta vacio")
+        if not validar_username(username):
             return redirect(url_for("auth.register"))
         
         email = request.form.get("email", "").strip()
@@ -165,14 +230,7 @@ def login():
         # WBS 4.1.4 - Un login correcto borra el historial: el usuario que fallo
         # cuatro veces y acerto no arrastra esos fallos al proximo intento.
         reset_attempts(db, username)
-        session.clear()
-        session.permanent = True
-        session["user_id"] = user["id"]
-        session["session_version"] = user["session_version"]
-        # Marca de nacimiento de la sesion, para el tope absoluto de 4.5.4. El
-        # cliente no la puede retrasar: la firma se lo impide, y sin esa
-        # garantia el tope no existiria.
-        session["login_at"] = int(time.time())
+        abrir_sesion(db, user)
         audit("login_success", user_id=user["id"], username=user["username"])
         flash("Sesión iniciada")
         return redirect(url_for("auth.dashboard"))
@@ -454,11 +512,7 @@ def mfa_verify():
         reset_attempts(db, user["username"])
         db.commit()
 
-        session.clear()
-        session.permanent = True
-        session["user_id"] = user["id"]
-        session["session_version"] = user["session_version"]
-        session["login_at"] = int(time.time())
+        abrir_sesion(db, user)
         # login_success y no un evento aparte: en los dos caminos significa
         # exactamente lo mismo, que se creo una sesion.
         audit("login_success", user_id=user["id"], username=user["username"])

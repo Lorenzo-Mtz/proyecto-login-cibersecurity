@@ -20,7 +20,7 @@ pytest tests/test_bruteforce.py
 pytest tests/test_bruteforce.py::test_sin_oraculo_por_latencia
 ```
 
-La suite son 90 pruebas y tarda ~100 s. Casi todo es bcrypt con cost 12: cada
+La suite son 130 pruebas y tarda ~130 s. Casi todo es bcrypt con cost 12: cada
 login cuesta ~330 ms **a propósito**, y seis pruebas esperan tiempo real a que
 venza algo (`test_el_bloqueo_expira_solo`, 11 s; `test_un_token_expirado_es_rechazado`,
 3 s; `test_la_sesion_pendiente_caduca`, 2 s; las tres de caducidad de sesión de
@@ -54,6 +54,9 @@ auditoría nuevos en un directorio temporal.
 | `test_csrf.py` | 4.5.3 | Tokens CSRF, logout solo por POST y *open redirect* |
 | `test_password_reset.py` | 4.2 | Recuperación de contraseña: un solo uso, expiración, sin enumeración de cuentas y sin fuga del token (R11) |
 | `test_mfa.py` | 4.3 | Segundo factor TOTP: ventana de ±1 periodo, rechazo de códigos reutilizados, login en dos pasos y límite de intentos (R4, R12) |
+| `test_headers.py` | 6.1 | Cabeceras de seguridad en toda respuesta, y la CSP estricta que permite `data:` solo en imágenes (gap G1) |
+| `test_errors.py` | 6.4 | Manejadores de 404 y 500: no filtran detalle, el 500 se audita sin traceback y las cabeceras salen también en los errores (gap G4) |
+| `test_register.py` | 6.6 | Política del nombre de usuario por lista blanca, límites de longitud y validación del email (gap G6) |
 | `test_session_expiry.py` | 4.5.4 | Caducidad de la sesión: expiración por inactividad y vida máxima que la actividad no renueva (R9) |
 
 Cada archivo abre con un docstring que explica **qué propiedad prueba y qué
@@ -94,9 +97,11 @@ igual porque dos errores se cancelaron: en `test_intento_bloqueado_no_prolonga_e
 se compara `MAX(id)`, que distingue "no se insertó nada" de "se insertó una fila
 y se borró otra".
 
-**Ver fallar la prueba antes de creerle** (LL14). Al cerrar un paquete se rompe
-cada control a propósito —una mutación a la vez, revirtiendo después— y se
-confirma que la prueba correspondiente se pone en rojo. Así se descubrió que
+**Ver fallar la prueba antes de creerle** (LL14), **y por la razón correcta**
+(LL30). Al cerrar un paquete se rompe cada control a propósito —una mutación a
+la vez, revirtiendo después— y se confirma que la prueba correspondiente se pone
+en rojo. Que la suite enrojezca no basta: si el fallo es un `TypeError` al
+arrancar, la mutación rompió el arranque y no el control, y hay que rehacerla. Así se descubrió que
 `test_se_marca_la_fila_del_token_usado_y_no_otra` pasaba con el bug puesto: en
 datos de prueba pequeños los ids coinciden por accidente y tapan justo los
 errores de "columna equivocada". Por eso ahora esa prueba emite los tokens en
@@ -112,9 +117,15 @@ rompe las pruebas por una razón que no tiene nada que ver con el código.
 - **WBS 4.5.1** (`SECRET_KEY` obligatoria) no tiene pruebas. `validate_secret_key`
   es una función pura y son cuatro asserts: clave ausente, el valor de ejemplo
   de `.env.example`, una de menos de 32 caracteres y una válida.
-- El registro (`/register`) se ejercita solo en parte. La política de longitud
-  quedó cubierta en `test_password_reset.py` (es la misma función compartida),
-  pero el formato del email y el límite de 72 bytes siguen sin prueba propia.
+- ~~El registro (`/register`) se ejercita solo en parte.~~ **Resuelto en 6.6:**
+  `test_register.py` cubre la política del nombre de usuario y el formato del
+  email. Sigue sin prueba propia el límite de 72 bytes de bcrypt.
+- **WBS 6.2**: el prefijo `__Host-` de la cookie **no se puede verificar aquí**.
+  El test client de Werkzeug no implementa las reglas de prefijo, así que
+  aceptaría una cookie que un navegador rechazaría. La prueba comprueba el
+  nombre y los atributos; la verificación real es **manual, en un navegador**.
+  Es un tercer tipo de hueco, distinto de los dos de abajo: no es que el
+  control sea difícil de medir, es que **el arnés no implementa la regla**.
 - **WBS 4.2**: falta cubrir el riesgo residual, cuando se atienda — que pedir
   enlaces en serie no deba poder mantener invalidado el de la víctima.
 - **WBS 4.5.4**: el camino con MFA no tiene prueba de caducidad **propia**.
